@@ -5,7 +5,8 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.ssafy.tiggle.presentation.ui.user.UserScreen
+import com.ssafy.tiggle.presentation.ui.auth.login.LoginScreen
+import com.ssafy.tiggle.presentation.ui.auth.signup.SignUpScreen
 
 /**
  * 앱의 네비게이션 그래프
@@ -18,15 +19,37 @@ fun NavigationGraph(
 ) {
     NavHost(
         navController = navController,
-        startDestination = Screen.UserList.route,
+        startDestination = Screen.Login.route,
         modifier = modifier
     ) {
-        composable(Screen.UserList.route) {
-            UserScreen()
+        composable(Screen.Login.route) {
+            LoginScreen(
+                onLoginSuccess = {
+
+                },
+                onSignUpClick = {
+                    // 회원가입 화면으로 이동
+                    navController.navigate(Screen.SignUp.route)
+                }
+            )
         }
 
-        // 추가 화면들은 여기에 정의
-        // composable(Screen.UserDetail.route) { ... }
+        composable(Screen.SignUp.route) {
+            // 회원가입 화면 컴포저블을 여기에 추가
+            SignUpScreen(
+                onSignUpComplete = {
+                    // 회원가입 성공 후 로그인 화면으로 이동
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(Screen.Login.route) { inclusive = true }
+                    }
+                },
+                onBackClick = {
+                    // 뒤로가기 버튼 클릭 시 이전 화면으로 이동
+                    navController.popBackStack()
+                }
+            )
+        }
+
     }
 }
 

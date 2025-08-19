@@ -1,6 +1,5 @@
-package com.ssafy.tiggle.ui.theme
+package com.ssafy.tiggle.presentation.ui.theme
 
-import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
