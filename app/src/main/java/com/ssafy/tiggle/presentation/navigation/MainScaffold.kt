@@ -32,7 +32,6 @@ fun MainScaffold() {
             composable(BottomScreen.PiggyBank.route) {
                 PiggyBankScreen()
             }
-            composable(BottomScreen.Donate.route) { DonateScreen() }
             composable(BottomScreen.Growth.route) { GrowthScreen() }
             composable(BottomScreen.Shorts.route) { ShortsScreen() }
         }
@@ -47,7 +46,6 @@ private fun BottomBar(navController: NavHostController) {
     NavigationBar(containerColor = Color.White) {
         listOf(
             BottomScreen.PiggyBank,
-            BottomScreen.Donate,
             BottomScreen.Growth,
             BottomScreen.Shorts
         ).forEach { item ->
@@ -69,10 +67,6 @@ private fun BottomBar(navController: NavHostController) {
 }
 
 //임시
-@Composable
-fun DonateScreen() {
-    Text("기부")
-}
 
 @Composable
 fun GrowthScreen() {

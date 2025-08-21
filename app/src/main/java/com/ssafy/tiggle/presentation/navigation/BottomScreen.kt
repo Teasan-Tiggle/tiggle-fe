@@ -19,9 +19,6 @@ sealed class BottomScreen(
         R.drawable.icon_piggy_inactive
     )
 
-    object Donate :
-        BottomScreen("donate", "기부", R.drawable.icon_donate_active, R.drawable.icon_donate_inactive)
-
     object Growth :
         BottomScreen("growth", "성장", R.drawable.icon_growth_active, R.drawable.icon_growth_inactive)
 
