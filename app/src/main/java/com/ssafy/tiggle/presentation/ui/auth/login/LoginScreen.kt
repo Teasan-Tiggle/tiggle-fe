@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -40,6 +41,14 @@ fun LoginScreen(
     onSignUpClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
+
+    // 로그인 성공 시 네비게이션 처리
+    LaunchedEffect(uiState.isLoginSuccess) {
+        if (uiState.isLoginSuccess) {
+            onLoginSuccess()
+            viewModel.resetLoginSuccess()
+        }
+    }
 
     TiggleScreenLayout(
         showBackButton = false,

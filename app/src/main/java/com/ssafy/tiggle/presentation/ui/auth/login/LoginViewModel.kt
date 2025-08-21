@@ -64,10 +64,18 @@ class LoginViewModel : ViewModel() {
         )
 
         // TODO: 실제 로그인 로직 구현
-        // 임시로 로딩 해제 (실제로는 API 응답에 따라 처리)
+        // 임시로 로그인 성공 처리 (실제로는 API 응답에 따라 처리)
         _uiState.value = currentState.copy(
-            isLoading = false
+            isLoading = false,
+            isLoginSuccess = true
         )
+    }
+
+    /**
+     * 로그인 성공 상태 리셋 (네비게이션 완료 후 호출)
+     */
+    fun resetLoginSuccess() {
+        _uiState.value = _uiState.value.copy(isLoginSuccess = false)
     }
 
     /**

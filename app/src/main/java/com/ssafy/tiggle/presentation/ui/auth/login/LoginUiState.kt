@@ -8,6 +8,7 @@ data class LoginUiState(
     val password: String = "",
     val isLoading: Boolean = false,
     val isPasswordVisible: Boolean = false,
+    val isLoginSuccess: Boolean = false,
     
     // 필드별 에러 메시지
     val emailError: String? = null,
