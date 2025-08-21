@@ -6,13 +6,11 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation3.runtime.NavBackStack
 import com.ssafy.tiggle.R
 
 /**
@@ -20,11 +18,10 @@ import com.ssafy.tiggle.R
  */
 @Composable
 fun BottomNavigation(
-    navController: NavHostController,
+    navBackStack: NavBackStack,
     modifier: Modifier = Modifier
 ) {
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route
+    val currentRoute = navBackStack.last()
 
     NavigationBar(
         containerColor = Color.White,
@@ -32,18 +29,19 @@ fun BottomNavigation(
     ) {
         // 저금통
         NavigationBarItem(
-            selected = currentRoute == Screen.PiggyBank.route,
+            selected = currentRoute == BottomScreen.PiggyBank,
             onClick = {
-                navController.navigate(Screen.PiggyBank.route) {
-                    launchSingleTop = true
-                    restoreState = true
-                    popUpTo(navController.graph.startDestinationId) { saveState = true }
-                }
+                navBackStack.add(BottomScreen.PiggyBank)
+//                {
+//                    launchSingleTop = true
+//                    restoreState = true
+//                    popUpTo(navController.graph.startDestinationId) { saveState = true }
+//                }
             },
             icon = { 
                 Icon(
                     painter = painterResource(
-                        id = if (currentRoute == Screen.PiggyBank.route) R.drawable.icon_piggy_active 
+                        id = if (currentRoute == BottomScreen.PiggyBank) R.drawable.icon_piggy_active
                              else R.drawable.icon_piggy_inactive
                     ),
                     contentDescription = "저금통",
@@ -55,18 +53,19 @@ fun BottomNavigation(
         
         // 성장
         NavigationBarItem(
-            selected = currentRoute == Screen.Growth.route,
+            selected = currentRoute == BottomScreen.Growth,
             onClick = {
-                navController.navigate(Screen.Growth.route) {
-                    launchSingleTop = true
-                    restoreState = true
-                    popUpTo(navController.graph.startDestinationId) { saveState = true }
-                }
+                navBackStack.add(BottomScreen.Growth)
+//                {
+//                    launchSingleTop = true
+//                    restoreState = true
+//                    popUpTo(navController.graph.startDestinationId) { saveState = true }
+//                }
             },
             icon = { 
                 Icon(
                     painter = painterResource(
-                        id = if (currentRoute == Screen.Growth.route) R.drawable.icon_growth_active 
+                        id = if (currentRoute == BottomScreen.Growth) R.drawable.icon_growth_active
                              else R.drawable.icon_growth_inactive
                     ),
                     contentDescription = "성장",
@@ -78,18 +77,19 @@ fun BottomNavigation(
         
         // 숏폼
         NavigationBarItem(
-            selected = currentRoute == Screen.Shorts.route,
+            selected = currentRoute == BottomScreen.Shorts,
             onClick = {
-                navController.navigate(Screen.Shorts.route) {
-                    launchSingleTop = true
-                    restoreState = true
-                    popUpTo(navController.graph.startDestinationId) { saveState = true }
-                }
+                navBackStack.add(BottomScreen.Shorts)
+//                {
+//                    launchSingleTop = true
+//                    restoreState = true
+//                    popUpTo(navController.graph.startDestinationId) { saveState = true }
+//                }
             },
             icon = { 
                 Icon(
                     painter = painterResource(
-                        id = if (currentRoute == Screen.Shorts.route) R.drawable.icon_shorts_active 
+                        id = if (currentRoute == BottomScreen.Shorts) R.drawable.icon_shorts_active
                              else R.drawable.icon_shorts_inactive
                     ),
                     contentDescription = "숏폼",

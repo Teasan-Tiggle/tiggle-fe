@@ -6,10 +6,12 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.navigation
-import androidx.navigation.compose.rememberNavController
+import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
+import androidx.navigation3.runtime.NavEntry
+import androidx.navigation3.runtime.rememberNavBackStack
+import androidx.navigation3.runtime.rememberSavedStateNavEntryDecorator
+import androidx.navigation3.ui.NavDisplay
+import androidx.navigation3.ui.rememberSceneSetupNavEntryDecorator
 import com.ssafy.tiggle.presentation.ui.auth.login.LoginScreen
 import com.ssafy.tiggle.presentation.ui.auth.signup.SignUpScreen
 
@@ -20,77 +22,69 @@ import com.ssafy.tiggle.presentation.ui.piggybank.PiggyBankScreen
  */
 @Composable
 fun NavigationGraph() {
-    val navController = rememberNavController()
+    val startDestination = Screen.Login
+    val navBackStack = rememberNavBackStack(startDestination)
 
-    NavHost(
-        navController = navController,
-        startDestination = Screen.Auth.route,
-        modifier = Modifier.fillMaxSize()
-    ) {
-        // 인증 플로우
-        navigation(startDestination = Screen.Login.route, route = Screen.Auth.route) {
-            composable(Screen.Login.route) {
-                LoginScreen(
-                    onLoginSuccess = {
-                        navController.navigate(Screen.Main.route) {
-                            popUpTo(Screen.Auth.route) { inclusive = true }
-                        }
-                    },
-                    onSignUpClick = {
-                        navController.navigate(Screen.SignUp.route)
-                    }
-                )
-            }
-
-            composable(Screen.SignUp.route) {
-                SignUpScreen(
-                    onSignUpComplete = {
-                        navController.navigate(Screen.Login.route) {
-                            popUpTo(Screen.Login.route) { inclusive = true }
-                        }
-                    },
-                    onBackClick = {
-                        navController.popBackStack()
-                    }
-                )
-            }
+    Scaffold(
+        bottomBar = {
+            if(navBackStack.last() != Screen.Login)
+            BottomNavigation(navBackStack)
         }
+    ) { innerPadding ->
+        NavDisplay(
+            backStack = navBackStack,
+            modifier = Modifier.fillMaxSize().padding(innerPadding),
+            entryDecorators = listOf(
+                rememberSceneSetupNavEntryDecorator(),
+                rememberSavedStateNavEntryDecorator(),
+                rememberViewModelStoreNavEntryDecorator()
+            ),
+            entryProvider = { key ->
+                when(key) {
+                    is Screen.Login -> NavEntry(key) {
+                        LoginScreen(
+                            onLoginSuccess = {
+                                navBackStack.add(BottomScreen.PiggyBank)
+                            },
+                            onSignUpClick = {
+                                navBackStack.add(Screen.SignUp)
+                            }
+                        )
+                    }
+                    is Screen.SignUp -> NavEntry(key) {
+                        SignUpScreen(
+                            onSignUpComplete = {
+                                navBackStack.add(Screen.Login)
+                            },
+                            onBackClick = {
+                                navBackStack.removeLastOrNull()
+                            }
+                        )
+                    }
+                    is BottomScreen.Growth -> NavEntry(key) {
+                        GrowthScreen()
+                    }
 
-        // 메인 앱 (바텀 네비게이션)
-        composable(Screen.Main.route) {
-            MainBottomNavigation()
-        }
+                    is BottomScreen.Shorts -> NavEntry(key) {
+                        ShortsScreen()
+                    }
+
+                    is BottomScreen.PiggyBank -> NavEntry(key) {
+                        PiggyBankScreen()
+                    }
+
+                    else -> throw IllegalArgumentException("Unknown route: $key")
+                }
+
+            }
+        )
     }
+
 }
 
 /**
  * 메인 화면의 바텀 네비게이션
  */
-@Composable
-private fun MainBottomNavigation() {
-    val bottomNavController = rememberNavController()
-
-    Scaffold(
-        bottomBar = { BottomNavigation(bottomNavController) }
-    ) { innerPadding ->
-        NavHost(
-            navController = bottomNavController,
-            startDestination = Screen.PiggyBank.route,
-            modifier = Modifier.padding(innerPadding)
-        ) {
-            composable(Screen.PiggyBank.route) {
-                PiggyBankScreen()
-            }
-            composable(Screen.Growth.route) {
-                GrowthScreen()
-            }
-            composable(Screen.Shorts.route) {
-                ShortsScreen()
-            }
-        }
-    }
-}
-
 // 임시 화면들
 @Composable
 private fun GrowthScreen() {
