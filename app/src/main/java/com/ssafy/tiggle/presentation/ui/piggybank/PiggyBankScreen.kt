@@ -56,6 +56,8 @@ import com.ssafy.tiggle.presentation.ui.theme.TiggleGrayText
 @Composable
 fun PiggyBankScreen(
     modifier: Modifier = Modifier,
+    onOpenAccountClick:()-> Unit={},
+    onBackClick:()-> Unit={},
     viewModel: PiggyBankViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -96,7 +98,7 @@ fun PiggyBankScreen(
                 DottedActionCard(
                     title = "티끌 저금통 개설",
                     desc = "계좌를 개설해\n티끌 저금통을 채워보세요!",
-                    onClick = { /* TODO: 네비게이션 */ }
+                    onClick = onOpenAccountClick
                 )
             }
             Spacer(Modifier.height(10.dp))

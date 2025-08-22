@@ -7,7 +7,7 @@ import kotlinx.serialization.Serializable
  * 앱의 모든 화면을 관리하는 sealed class
  */
 
-sealed interface BottomScreen : NavKey{
+sealed interface BottomScreen : NavKey {
     // 바텀 네비게이션 화면들
     @Serializable
     object PiggyBank : BottomScreen
@@ -19,10 +19,14 @@ sealed interface BottomScreen : NavKey{
     object Shorts : BottomScreen
 }
 
-sealed interface Screen : NavKey{
+sealed interface Screen : NavKey {
     // 인증 관련
     @Serializable
     object Login : Screen
+
     @Serializable
     object SignUp : Screen
+
+    @Serializable
+    object OpenAccount : Screen
 }

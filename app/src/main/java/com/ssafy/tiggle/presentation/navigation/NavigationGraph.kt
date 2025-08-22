@@ -14,7 +14,7 @@ import androidx.navigation3.ui.NavDisplay
 import androidx.navigation3.ui.rememberSceneSetupNavEntryDecorator
 import com.ssafy.tiggle.presentation.ui.auth.login.LoginScreen
 import com.ssafy.tiggle.presentation.ui.auth.signup.SignUpScreen
-
+import com.ssafy.tiggle.presentation.ui.piggybank.OpenAccountScreen
 import com.ssafy.tiggle.presentation.ui.piggybank.PiggyBankScreen
 
 /**
@@ -22,25 +22,27 @@ import com.ssafy.tiggle.presentation.ui.piggybank.PiggyBankScreen
  */
 @Composable
 fun NavigationGraph() {
-    val startDestination = Screen.Login
+    val startDestination = Screen.OpenAccount
     val navBackStack = rememberNavBackStack(startDestination)
 
     Scaffold(
         bottomBar = {
-            if(navBackStack.last() != Screen.Login)
-            BottomNavigation(navBackStack)
+            if (navBackStack.last() != Screen.Login)
+                BottomNavigation(navBackStack)
         }
     ) { innerPadding ->
         NavDisplay(
             backStack = navBackStack,
-            modifier = Modifier.fillMaxSize().padding(innerPadding),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding),
             entryDecorators = listOf(
                 rememberSceneSetupNavEntryDecorator(),
                 rememberSavedStateNavEntryDecorator(),
                 rememberViewModelStoreNavEntryDecorator()
             ),
             entryProvider = { key ->
-                when(key) {
+                when (key) {
                     is Screen.Login -> NavEntry(key) {
                         LoginScreen(
                             onLoginSuccess = {
@@ -51,6 +53,7 @@ fun NavigationGraph() {
                             }
                         )
                     }
+
                     is Screen.SignUp -> NavEntry(key) {
                         SignUpScreen(
                             onSignUpComplete = {
@@ -61,6 +64,7 @@ fun NavigationGraph() {
                             }
                         )
                     }
+
                     is BottomScreen.Growth -> NavEntry(key) {
                         GrowthScreen()
                     }
@@ -70,7 +74,18 @@ fun NavigationGraph() {
                     }
 
                     is BottomScreen.PiggyBank -> NavEntry(key) {
-                        PiggyBankScreen()
+                        PiggyBankScreen(
+                            onOpenAccountClick = {
+                                navBackStack.add(Screen.OpenAccount)
+                            },
+                            onBackClick = {
+                                navBackStack.removeLastOrNull()
+                            }
+                        )
+                    }
+
+                    is Screen.OpenAccount -> NavEntry(key) {
+                        OpenAccountScreen()
                     }
 
                     else -> throw IllegalArgumentException("Unknown route: $key")
