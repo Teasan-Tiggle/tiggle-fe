@@ -56,8 +56,9 @@ import com.ssafy.tiggle.presentation.ui.theme.TiggleGrayText
 @Composable
 fun PiggyBankScreen(
     modifier: Modifier = Modifier,
-    onOpenAccountClick:()-> Unit={},
-    onBackClick:()-> Unit={},
+    onOpenAccountClick: () -> Unit = {},
+    onRegisterAccountClick: () -> Unit = {},
+    onBackClick: () -> Unit = {},
     viewModel: PiggyBankViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -113,7 +114,7 @@ fun PiggyBankScreen(
                 DottedActionCard(
                     title = "내 계좌 등록",
                     desc = "나의 계좌를 등록하면\n티끌 저금통에 잔돈이 자동으로 기부됩니다.",
-                    onClick = { /* TODO: 네비게이션 */ }
+                    onClick = onRegisterAccountClick
                 )
             }
             Spacer(Modifier.height(16.dp))
