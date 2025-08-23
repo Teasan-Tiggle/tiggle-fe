@@ -1,14 +1,23 @@
 package com.ssafy.tiggle.presentation.ui.auth.login
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.ssafy.tiggle.domain.usecase.LoginUserUseCase
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 /**
  * 로그인 화면의 ViewModel
  */
-class LoginViewModel : ViewModel() {
+@HiltViewModel
+class LoginViewModel @Inject constructor(
+    private val loginUserUseCase: LoginUserUseCase
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LoginUiState())
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
@@ -63,12 +72,29 @@ class LoginViewModel : ViewModel() {
             generalError = null
         )
 
-        // TODO: 실제 로그인 로직 구현
-        // 임시로 로그인 성공 처리 (실제로는 API 응답에 따라 처리)
-        _uiState.value = currentState.copy(
-            isLoading = false,
-            isLoginSuccess = true
-        )
+        // 실제 로그인 API 호출
+        viewModelScope.launch {
+            Log.d("LoginViewModel", "🎯 로그인 UseCase 호출 시작")
+            loginUserUseCase(currentState.email, currentState.password)
+                .onSuccess {
+                    // 로그인 성공
+                    Log.d("LoginViewModel", "🎉 로그인 성공!")
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        isLoginSuccess = true,
+                        generalError = null
+                    )
+                }
+                .onFailure { exception ->
+                    // 로그인 실패
+                    Log.e("LoginViewModel", "❌ 로그인 실패: ${exception.message}")
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        generalError = exception.message ?: "로그인에 실패했습니다.",
+                        isLoginSuccess = false
+                    )
+                }
+        }
     }
 
     /**

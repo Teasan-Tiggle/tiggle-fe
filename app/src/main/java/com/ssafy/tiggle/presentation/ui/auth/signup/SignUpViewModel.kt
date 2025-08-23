@@ -1,8 +1,11 @@
 package com.ssafy.tiggle.presentation.ui.auth.signup
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ssafy.tiggle.domain.entity.ValidationField
+import com.ssafy.tiggle.domain.usecase.GetDepartmentsUseCase
+import com.ssafy.tiggle.domain.usecase.GetUniversitiesUseCase
 import com.ssafy.tiggle.domain.usecase.SignUpUserUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,7 +19,9 @@ import javax.inject.Inject
  */
 @HiltViewModel
 class SignUpViewModel @Inject constructor(
-    private val signUpUserUseCase: SignUpUserUseCase
+    private val signUpUserUseCase: SignUpUserUseCase,
+    private val getUniversitiesUseCase: GetUniversitiesUseCase,
+    private val getDepartmentsUseCase: GetDepartmentsUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SignUpUiState())
@@ -70,21 +75,40 @@ class SignUpViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(userData = newData)
     }
 
+    fun updatePhone(phone: String) {
+        val currentData = _uiState.value.userData
+        val newData = currentData.copy(phone = phone).validateField(ValidationField.PHONE)
+        _uiState.value = _uiState.value.copy(userData = newData)
+    }
+
     fun updateSchool(school: String) {
         val currentData = _uiState.value.userData
-        val newData = currentData.copy(school = school).validateField(ValidationField.SCHOOL)
+        val newData = currentData.copy(universityId = school).validateField(ValidationField.SCHOOL)
         _uiState.value = _uiState.value.copy(userData = newData)
+        
+        // 학교가 변경되면 해당 학교의 학과 목록을 불러옴
+        if (school.isNotBlank()) {
+            loadDepartments(school.toLongOrNull() ?: return)
+        } else {
+            // 학교가 선택되지 않으면 학과 목록 초기화
+            _uiState.value = _uiState.value.copy(
+                departments = emptyList(),
+                userData = _uiState.value.userData.copy(departmentId = "")
+            )
+        }
     }
 
     fun updateDepartment(department: String) {
         val currentData = _uiState.value.userData
-        val newData = currentData.copy(department = department).validateField(ValidationField.DEPARTMENT)
+        val newData =
+            currentData.copy(departmentId = department).validateField(ValidationField.DEPARTMENT)
         _uiState.value = _uiState.value.copy(userData = newData)
     }
 
     fun updateStudentId(studentId: String) {
         val currentData = _uiState.value.userData
-        val newData = currentData.copy(studentId = studentId).validateField(ValidationField.STUDENT_ID)
+        val newData =
+            currentData.copy(studentId = studentId).validateField(ValidationField.STUDENT_ID)
         _uiState.value = _uiState.value.copy(userData = newData)
     }
 
@@ -98,7 +122,8 @@ class SignUpViewModel @Inject constructor(
                 SignUpStep.TERMS -> SignUpStep.EMAIL
                 SignUpStep.EMAIL -> SignUpStep.PASSWORD
                 SignUpStep.PASSWORD -> SignUpStep.NAME
-                SignUpStep.NAME -> SignUpStep.SCHOOL
+                SignUpStep.NAME -> SignUpStep.PHONE
+                SignUpStep.PHONE -> SignUpStep.SCHOOL
                 SignUpStep.SCHOOL -> SignUpStep.COMPLETE
                 SignUpStep.COMPLETE -> SignUpStep.COMPLETE
             }
@@ -116,7 +141,8 @@ class SignUpViewModel @Inject constructor(
             SignUpStep.EMAIL -> SignUpStep.TERMS
             SignUpStep.PASSWORD -> SignUpStep.EMAIL
             SignUpStep.NAME -> SignUpStep.PASSWORD
-            SignUpStep.SCHOOL -> SignUpStep.NAME
+            SignUpStep.PHONE -> SignUpStep.NAME
+            SignUpStep.SCHOOL -> SignUpStep.PHONE
             SignUpStep.COMPLETE -> SignUpStep.SCHOOL
         }
 
@@ -173,15 +199,27 @@ class SignUpViewModel @Inject constructor(
                 }
             }
 
+            SignUpStep.PHONE -> {
+                val validatedData = currentState.userData.validateField(ValidationField.PHONE)
+
+                if (validatedData.phoneError != null) {
+                    _uiState.value = currentState.copy(userData = validatedData)
+                    false
+                } else {
+                    true
+                }
+            }
+
             SignUpStep.SCHOOL -> {
                 val validatedData = currentState.userData
                     .validateField(ValidationField.SCHOOL)
                     .validateField(ValidationField.DEPARTMENT)
                     .validateField(ValidationField.STUDENT_ID)
 
-                if (validatedData.schoolError != null || 
-                    validatedData.departmentError != null || 
-                    validatedData.studentIdError != null) {
+                if (validatedData.schoolError != null ||
+                    validatedData.departmentError != null ||
+                    validatedData.studentIdError != null
+                ) {
                     _uiState.value = currentState.copy(userData = validatedData)
                     false
                 } else {
@@ -193,7 +231,60 @@ class SignUpViewModel @Inject constructor(
         }
     }
 
+    // 대학교 목록 불러오기
+    fun loadUniversities() {
+        Log.d("SignUpViewModel", "🏫 대학교 목록 로드 시작")
+        _uiState.value = _uiState.value.copy(isUniversitiesLoading = true)
+        
+        viewModelScope.launch {
+            getUniversitiesUseCase()
+                .onSuccess { universities ->
+                    Log.d("SignUpViewModel", "🎉 대학교 목록 로드 성공: ${universities.size}개")
+                    _uiState.value = _uiState.value.copy(
+                        universities = universities,
+                        isUniversitiesLoading = false
+                    )
+                }
+                .onFailure { exception ->
+                    Log.e("SignUpViewModel", "❌ 대학교 목록 로드 실패: ${exception.message}")
+                    _uiState.value = _uiState.value.copy(
+                        isUniversitiesLoading = false,
+                        errorMessage = "대학교 목록을 불러올 수 없습니다."
+                    )
+                }
+        }
+    }
+
+    // 학과 목록 불러오기
+    private fun loadDepartments(universityId: Long) {
+        Log.d("SignUpViewModel", "🎓 학과 목록 로드 시작 (대학교 ID: $universityId)")
+        _uiState.value = _uiState.value.copy(isDepartmentsLoading = true)
+        
+        viewModelScope.launch {
+            getDepartmentsUseCase(universityId)
+                .onSuccess { departments ->
+                    Log.d("SignUpViewModel", "🎉 학과 목록 로드 성공: ${departments.size}개")
+                    _uiState.value = _uiState.value.copy(
+                        departments = departments,
+                        isDepartmentsLoading = false
+                    )
+                }
+                .onFailure { exception ->
+                    Log.e("SignUpViewModel", "❌ 학과 목록 로드 실패: ${exception.message}")
+                    _uiState.value = _uiState.value.copy(
+                        isDepartmentsLoading = false,
+                        errorMessage = "학과 목록을 불러올 수 없습니다."
+                    )
+                }
+        }
+    }
+
     // 유효성 검사는 도메인 엔티티(UserSignUp)에서 처리합니다.
+
+    // 회원가입 상태 초기화
+    fun resetSignUpState() {
+        _uiState.value = SignUpUiState()
+    }
 
     // 회원가입 완료
     fun completeSignUp() {
@@ -217,9 +308,11 @@ class SignUpViewModel @Inject constructor(
 
         // 회원가입 API 호출
         viewModelScope.launch {
+            Log.d("SignUpViewModel", "🎯 UseCase 호출 시작")
             signUpUserUseCase(validatedData)
-                .onSuccess { user ->
+                .onSuccess {
                     // 회원가입 성공
+                    Log.d("SignUpViewModel", "🎉 UseCase 성공 - COMPLETE 화면으로 이동")
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         currentStep = SignUpStep.COMPLETE,
@@ -228,6 +321,7 @@ class SignUpViewModel @Inject constructor(
                 }
                 .onFailure { exception ->
                     // 회원가입 실패
+                    Log.e("SignUpViewModel", "❌ UseCase 실패: ${exception.message}")
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         errorMessage = exception.message ?: "회원가입에 실패했습니다."

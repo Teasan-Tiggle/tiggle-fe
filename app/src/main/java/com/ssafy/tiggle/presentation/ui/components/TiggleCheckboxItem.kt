@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -76,7 +75,7 @@ fun TiggleAllAgreeCheckboxItem(
                 modifier = Modifier.size(24.dp)
             ) {
                 Icon(
-                    imageVector = Icons.Default.KeyboardArrowRight,
+                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                     contentDescription = "상세보기",
                     tint = Color.Gray
                 )

@@ -1,6 +1,8 @@
 package com.ssafy.tiggle.di
 
+import com.ssafy.tiggle.data.repository.UniversityRepositoryImpl
 import com.ssafy.tiggle.data.repository.UserRepositoryImpl
+import com.ssafy.tiggle.domain.repository.UniversityRepository
 import com.ssafy.tiggle.domain.repository.UserRepository
 import dagger.Binds
 import dagger.Module
@@ -21,5 +23,11 @@ abstract class RepositoryModule {
     abstract fun bindUserRepository(
         userRepositoryImpl: UserRepositoryImpl
     ): UserRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindUniversityRepository(
+        universityRepositoryImpl: UniversityRepositoryImpl
+    ): UniversityRepository
 
 }

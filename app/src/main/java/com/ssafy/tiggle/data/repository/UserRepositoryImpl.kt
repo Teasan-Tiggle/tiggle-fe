@@ -1,8 +1,12 @@
 package com.ssafy.tiggle.data.repository
 
-import com.ssafy.tiggle.data.datasource.remote.UserApiService
+import android.util.Log
+import com.google.gson.Gson
+import com.ssafy.tiggle.data.datasource.local.AuthDataSource
+import com.ssafy.tiggle.data.datasource.remote.AuthApiService
+import com.ssafy.tiggle.data.model.BaseResponse
+import com.ssafy.tiggle.data.model.LoginRequestDto
 import com.ssafy.tiggle.data.model.SignUpRequestDto
-import com.ssafy.tiggle.domain.entity.User
 import com.ssafy.tiggle.domain.entity.UserSignUp
 import com.ssafy.tiggle.domain.repository.UserRepository
 import javax.inject.Inject
@@ -10,44 +14,133 @@ import javax.inject.Singleton
 
 /**
  * UserRepository 구현체
- * 
+ *
  * 실제 데이터 소스(API)와 통신하여 회원가입 데이터를 처리합니다.
  */
 @Singleton
 class UserRepositoryImpl @Inject constructor(
-    private val userApiService: UserApiService
+    private val authApiService: AuthApiService,
+    private val authDataSource: AuthDataSource
 ) : UserRepository {
-    
-    override suspend fun signUpUser(userSignUp: UserSignUp): Result<User> {
+
+    override suspend fun signUpUser(userSignUp: UserSignUp): Result<Unit> {
         return try {
             // 도메인 엔티티를 DTO로 변환
             val signUpRequest = SignUpRequestDto(
                 email = userSignUp.email,
                 password = userSignUp.password,
                 name = userSignUp.name,
-                school = userSignUp.school,
-                department = userSignUp.department,
-                studentId = userSignUp.studentId
+                universityId = userSignUp.universityId,
+                departmentId = userSignUp.departmentId,
+                studentId = userSignUp.studentId,
+                phone = userSignUp.phone,
             )
-            
-            val response = userApiService.signUp(signUpRequest)
+
+            val response = authApiService.signUp(signUpRequest)
+
             if (response.isSuccessful) {
-                val signUpResponse = response.body()
-                if (signUpResponse?.success == true && signUpResponse.data != null) {
-                    Result.success(signUpResponse.data.toDomain())
+                val body = response.body()
+                if (body != null && body.result) {
+                    Result.success(Unit)
                 } else {
-                    Result.failure(Exception(signUpResponse?.message ?: "회원가입에 실패했습니다."))
+                    Result.failure(Exception(body?.message ?: "알 수 없는 오류가 발생했습니다."))
                 }
             } else {
-                when (response.code()) {
-                    400 -> Result.failure(Exception("잘못된 요청입니다."))
-                    409 -> Result.failure(Exception("이미 등록된 이메일입니다."))
-                    500 -> Result.failure(Exception("서버 오류가 발생했습니다."))
-                    else -> Result.failure(Exception("회원가입에 실패했습니다. (${response.code()})"))
+                val errorBody = response.errorBody()?.string()
+                val message = when (response.code()) {
+                    400 -> "잘못된 요청입니다. 입력 정보를 확인해주세요."
+                    401 -> "인증이 필요합니다."
+                    403 -> "접근 권한이 없습니다. 회원가입 정보를 확인해주세요."
+                    404 -> "요청한 페이지를 찾을 수 없습니다."
+                    409 -> "이미 등록된 정보입니다. 다른 정보로 시도해주세요."
+                    500 -> "서버 내부 오류가 발생했습니다. 잠시 후 다시 시도해주세요."
+                    502, 503, 504 -> "서버가 일시적으로 이용할 수 없습니다. 잠시 후 다시 시도해주세요."
+                    else -> {
+                        // 응답 본문이 있으면 파싱 시도
+                        if (!errorBody.isNullOrEmpty()) {
+                            try {
+                                val errorResponse =
+                                    Gson().fromJson(errorBody, BaseResponse::class.java)
+                                errorResponse.message ?: "회원가입에 실패했습니다. (${response.code()})"
+                            } catch (e: Exception) {
+                                "회원가입에 실패했습니다. (${response.code()})"
+                            }
+                        } else {
+                            "회원가입에 실패했습니다. (${response.code()})"
+                        }
+                    }
                 }
+                Result.failure(Exception(message))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            Log.e("UserRepositoryImpl", "💥 네트워크 예외 발생: ${e.message}", e)
+            Result.failure(Exception("네트워크 연결을 확인해주세요."))
         }
+    }
+
+    override suspend fun loginUser(email: String, password: String): Result<Unit> {
+        return try {
+            // 도메인 엔티티를 DTO로 변환
+            val loginRequest = LoginRequestDto(
+                email = email,
+                password = password
+            )
+
+            val response = authApiService.login(loginRequest)
+
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null && body.result) {
+                    val newAccess = stripBearer(response.headers()["Authorization"])
+                    val setCookies = response.headers().values("Set-Cookie")
+                    authDataSource.saveSetCookies(setCookies)
+
+                    val cookieRefresh = setCookies.firstOrNull { it.startsWith("refreshToken=") }
+                        ?.substringAfter("refreshToken=")?.substringBefore(";")
+
+                    if (newAccess.isBlank() || cookieRefresh.isNullOrBlank()) {
+                        Result.failure(Exception("인증 토큰을 받을 수 없습니다."))
+                    } else {
+                        authDataSource.saveTokens(newAccess, cookieRefresh)
+                        Result.success(Unit)
+                    }
+                } else {
+                    Result.failure(Exception(body?.message ?: "로그인에 실패했습니다."))
+                }
+            } else {
+                val errorBody = response.errorBody()?.string()
+                val message = when (response.code()) {
+                    400 -> "잘못된 요청입니다. 입력 정보를 확인해주세요."
+                    401 -> "이메일 또는 비밀번호가 올바르지 않습니다."
+                    403 -> "접근 권한이 없습니다."
+                    404 -> "존재하지 않는 사용자입니다."
+                    500 -> "서버 내부 오류가 발생했습니다. 잠시 후 다시 시도해주세요."
+                    502, 503, 504 -> "서버가 일시적으로 이용할 수 없습니다. 잠시 후 다시 시도해주세요."
+                    else -> {
+                        if (!errorBody.isNullOrEmpty()) {
+                            try {
+                                val errorResponse =
+                                    Gson().fromJson(errorBody, BaseResponse::class.java)
+                                errorResponse.message ?: "로그인에 실패했습니다. (${response.code()})"
+                            } catch (e: Exception) {
+                                "로그인에 실패했습니다. (${response.code()})"
+                            }
+                        } else {
+                            "로그인에 실패했습니다. (${response.code()})"
+                        }
+                    }
+                }
+                Result.failure(Exception(message))
+            }
+        } catch (e: Exception) {
+            Result.failure(Exception("네트워크 연결을 확인해주세요."))
+        }
+    }
+
+    /**
+     * Authorization 헤더에서 Bearer 접두사를 제거하는 유틸리티 함수
+     */
+    private fun stripBearer(authHeader: String?): String {
+        return authHeader?.removePrefix("Bearer ")?.trim() ?: ""
     }
 }

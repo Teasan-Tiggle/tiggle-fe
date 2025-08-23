@@ -1,5 +1,6 @@
 package com.ssafy.tiggle.presentation.ui.auth.signup
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -7,11 +8,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
@@ -38,6 +41,20 @@ fun SignUpScreen(
     viewModel: SignUpViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
+
+    // 회원가입 실패 시 Toast 표시 및 로그인 화면으로 돌아가기
+    LaunchedEffect(uiState.errorMessage) {
+        uiState.errorMessage?.let { error ->
+            if (uiState.currentStep == SignUpStep.SCHOOL && !uiState.isLoading) {
+                // 회원가입 API 호출 실패 시에만 Toast 표시
+                Toast.makeText(context, "회원가입 실패: $error", Toast.LENGTH_LONG).show()
+                // 잠시 후 로그인 화면으로 돌아가기
+                kotlinx.coroutines.delay(2000)
+                onBackClick()
+            }
+        }
+    }
 
     when (uiState.currentStep) {
         SignUpStep.TERMS -> {
@@ -77,6 +94,15 @@ fun SignUpScreen(
             )
         }
 
+        SignUpStep.PHONE -> {
+            PhoneInputScreen(
+                uiState = uiState,
+                onBackClick = { viewModel.goToPreviousStep() },
+                onPhoneChange = viewModel::updatePhone,
+                onNextClick = { viewModel.goToNextStep() }
+            )
+        }
+
         SignUpStep.SCHOOL -> {
             SchoolInformationScreen(
                 uiState = uiState,
@@ -84,16 +110,19 @@ fun SignUpScreen(
                 onSchoolChange = viewModel::updateSchool,
                 onDepartmentChange = viewModel::updateDepartment,
                 onStudentIdChange = viewModel::updateStudentId,
+                onLoadUniversities = viewModel::loadUniversities,
                 onNextClick = {
                     viewModel.completeSignUp()
-                    viewModel.goToNextStep()
                 }
             )
         }
 
         SignUpStep.COMPLETE -> {
             SignUpCompleteScreen(
-                onComplete = onSignUpComplete
+                onComplete = {
+                    viewModel.resetSignUpState()
+                    onSignUpComplete()
+                }
             )
         }
     }
@@ -338,6 +367,50 @@ private fun NameInputScreen(
 }
 
 /**
+ * 5단계: 전화번호 입력 화면
+ */
+@Composable
+private fun PhoneInputScreen(
+    uiState: SignUpUiState,
+    onBackClick: () -> Unit,
+    onPhoneChange: (String) -> Unit,
+    onNextClick: () -> Unit
+) {
+    TiggleScreenLayout(
+        showBackButton = true,
+        onBackClick = onBackClick,
+        bottomButton = {
+            TiggleButton(
+                text = "다음",
+                onClick = onNextClick,
+                enabled = uiState.userData.phone.isNotBlank()
+            )
+        }
+    ) {
+        Column {
+            Text(
+                text = "전화번호를\n입력해주세요.",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.Black
+            )
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            TiggleTextField(
+                value = uiState.userData.phone,
+                onValueChange = onPhoneChange,
+                label = "전화번호",
+                placeholder = "예: 010-1234-5678",
+                keyboardType = KeyboardType.Phone,
+                isError = uiState.userData.phoneError != null,
+                errorMessage = uiState.userData.phoneError
+            )
+        }
+    }
+}
+
+/**
  * 5단계: 학교 정보 입력 화면 (학교/학과/학번 통합)
  */
 @Composable
@@ -347,29 +420,21 @@ private fun SchoolInformationScreen(
     onSchoolChange: (String) -> Unit,
     onDepartmentChange: (String) -> Unit,
     onStudentIdChange: (String) -> Unit,
+    onLoadUniversities: () -> Unit,
     onNextClick: () -> Unit
 ) {
-    val schools = listOf(
-        "서울대학교",
-        "연세대학교",
-        "고려대학교",
-        "SSAFY",
-        "기타"
-    )
+    // 화면 진입 시 대학교 목록 로드
+    LaunchedEffect(Unit) {
+        onLoadUniversities()
+    }
 
-    val departments = listOf(
-        "컴퓨터공학과",
-        "소프트웨어학과",
-        "전자공학과",
-        "정보통신공학과",
-        "경영학과",
-        "경제학과",
-        "기계공학과",
-        "화학공학과",
-        "건축학과",
-        "산업공학과",
-        "기타"
-    )
+    // 드롭다운에 표시할 학교/학과 이름 목록
+    val schoolNames = uiState.universities.map { it.name }
+    val departmentNames = uiState.departments.map { it.name }
+    
+    // 현재 선택된 학교/학과 이름
+    val selectedSchoolName = uiState.universities.find { "${it.id}" == uiState.userData.universityId }?.name ?: ""
+    val selectedDepartmentName = uiState.departments.find { "${it.id}" == uiState.userData.departmentId }?.name ?: ""
 
     TiggleScreenLayout(
         showBackButton = true,
@@ -379,8 +444,8 @@ private fun SchoolInformationScreen(
                 text = if (uiState.isLoading) "가입 중..." else "회원가입 완료하기",
                 onClick = onNextClick,
                 enabled = !uiState.isLoading &&
-                        uiState.userData.school.isNotBlank() &&
-                        uiState.userData.department.isNotBlank() &&
+                        uiState.userData.universityId.isNotBlank() &&
+                        uiState.userData.departmentId.isNotBlank() &&
                         uiState.userData.studentId.isNotBlank() &&
                         uiState.userData.schoolError == null &&
                         uiState.userData.departmentError == null &&
@@ -410,9 +475,15 @@ private fun SchoolInformationScreen(
             // 학교 선택
             TiggleDropdown(
                 label = "학교",
-                selectedValue = uiState.userData.school,
-                options = schools,
-                onValueChange = onSchoolChange,
+                selectedValue = selectedSchoolName,
+                options = schoolNames,
+                onValueChange = { schoolName ->
+                    // 선택된 학교 이름으로 ID를 찾아서 전달
+                    val selectedUniversity = uiState.universities.find { it.name == schoolName }
+                    selectedUniversity?.let { university ->
+                        onSchoolChange("${university.id}")
+                    }
+                },
                 placeholder = "학교를 선택해주세요"
             )
 
@@ -431,9 +502,15 @@ private fun SchoolInformationScreen(
             // 학과 선택
             TiggleDropdown(
                 label = "학과",
-                selectedValue = uiState.userData.department,
-                options = departments,
-                onValueChange = onDepartmentChange,
+                selectedValue = selectedDepartmentName,
+                options = departmentNames,
+                onValueChange = { departmentName ->
+                    // 선택된 학과 이름으로 ID를 찾아서 전달
+                    val selectedDepartment = uiState.departments.find { it.name == departmentName }
+                    selectedDepartment?.let { department ->
+                        onDepartmentChange("${department.id}")
+                    }
+                },
                 placeholder = "학과를 선택해주세요"
             )
 
@@ -616,11 +693,37 @@ private fun SignUpNameScreenPreview() {
 
 @Preview(showBackground = true)
 @Composable
+private fun SignUpPhoneScreenPreview() {
+    val uiState = SignUpUiState(
+        currentStep = SignUpStep.PHONE,
+        userData = UserSignUp(
+            phone = "01012345678"
+        )
+    )
+
+    PhoneInputScreen(
+        uiState = uiState,
+        onBackClick = {},
+        onPhoneChange = {},
+        onNextClick = {}
+    )
+}
+
+@Preview(showBackground = true)
+@Composable
 private fun SignUpSchoolScreenPreview() {
     val uiState = SignUpUiState(
         currentStep = SignUpStep.SCHOOL,
         userData = UserSignUp(
-            school = "SSAFY"
+            universityId = "1"
+        ),
+        universities = listOf(
+            com.ssafy.tiggle.domain.entity.University(1, "SSAFY"),
+            com.ssafy.tiggle.domain.entity.University(2, "서울대학교")
+        ),
+        departments = listOf(
+            com.ssafy.tiggle.domain.entity.Department(1, "컴퓨터공학과"),
+            com.ssafy.tiggle.domain.entity.Department(2, "소프트웨어학과")
         )
     )
 
@@ -628,10 +731,10 @@ private fun SignUpSchoolScreenPreview() {
         uiState = uiState,
         onBackClick = {},
         onSchoolChange = {},
-
-        onNextClick = {},
         onDepartmentChange = {},
-        onStudentIdChange = { }
+        onStudentIdChange = {},
+        onLoadUniversities = {},
+        onNextClick = {}
     )
 }
 
@@ -650,18 +753,23 @@ private fun SignUpLoadingScreenPreview() {
         currentStep = SignUpStep.SCHOOL,
         isLoading = true,
         userData = UserSignUp(
-            school = "SSAFY"
-        )
+            universityId = "1"
+        ),
+        universities = listOf(
+            com.ssafy.tiggle.domain.entity.University(1, "SSAFY"),
+            com.ssafy.tiggle.domain.entity.University(2, "서울대학교")
+        ),
+        isUniversitiesLoading = true
     )
 
     SchoolInformationScreen(
         uiState = uiState,
         onBackClick = {},
         onSchoolChange = {},
-
-        onNextClick = {},
         onDepartmentChange = {},
-        onStudentIdChange = { }
+        onStudentIdChange = {},
+        onLoadUniversities = {},
+        onNextClick = {}
     )
 }
 

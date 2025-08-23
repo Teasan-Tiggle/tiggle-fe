@@ -4,7 +4,7 @@ import android.util.Patterns
 
 /**
  * 사용자 회원가입 도메인 엔티티
- * 
+ *
  * 회원가입 프로세스에서 사용되는 핵심 데이터와 유효성 검사 상태를 포함합니다.
  */
 data class UserSignUp(
@@ -12,10 +12,11 @@ data class UserSignUp(
     val password: String = "",
     val confirmPassword: String = "",
     val name: String = "",
-    val school: String = "",
-    val department: String = "",
+    val universityId: String = "",
+    val departmentId: String = "",
     val studentId: String = "",
-    
+    val phone: String = "",
+
     // 유효성 검사 상태
     val emailError: String? = null,
     val passwordError: String? = null,
@@ -23,58 +24,63 @@ data class UserSignUp(
     val nameError: String? = null,
     val schoolError: String? = null,
     val departmentError: String? = null,
-    val studentIdError: String? = null
+    val studentIdError: String? = null,
+    val phoneError: String? = null
+
 ) {
     /**
      * 모든 필수 필드가 유효한지 확인
      */
     fun isValid(): Boolean {
-        return email.isNotBlank() && 
-               password.isNotBlank() && 
-               confirmPassword.isNotBlank() && 
-               name.isNotBlank() && 
-               school.isNotBlank() &&
-               department.isNotBlank() &&
-               studentId.isNotBlank() &&
-               emailError == null && 
-               passwordError == null && 
-               confirmPasswordError == null && 
-               nameError == null && 
-               schoolError == null &&
-               departmentError == null &&
-               studentIdError == null
+        return email.isNotBlank() &&
+                password.isNotBlank() &&
+                confirmPassword.isNotBlank() &&
+                name.isNotBlank() &&
+                universityId.isNotBlank() &&
+                departmentId.isNotBlank() &&
+                studentId.isNotBlank() &&
+                emailError == null &&
+                passwordError == null &&
+                confirmPasswordError == null &&
+                nameError == null &&
+                schoolError == null &&
+                departmentError == null &&
+                studentIdError == null &&
+                phoneError == null
     }
-    
+
     /**
      * 필수 필드가 모두 입력되었는지 확인
      */
     fun hasAllRequiredFields(): Boolean {
-        return email.isNotBlank() && 
-               password.isNotBlank() && 
-               confirmPassword.isNotBlank() && 
-               name.isNotBlank() && 
-               school.isNotBlank() &&
-               department.isNotBlank() &&
-               studentId.isNotBlank()
+        return email.isNotBlank() &&
+                password.isNotBlank() &&
+                confirmPassword.isNotBlank() &&
+                name.isNotBlank() &&
+                universityId.isNotBlank() &&
+                departmentId.isNotBlank() &&
+                studentId.isNotBlank() &&
+                phone.isNotBlank()
     }
-    
+
     /**
      * 에러가 있는 필드가 있는지 확인
      */
     fun hasErrors(): Boolean {
-        return emailError != null || 
-               passwordError != null || 
-               confirmPasswordError != null || 
-               nameError != null || 
-               schoolError != null ||
-               departmentError != null ||
-               studentIdError != null
+        return emailError != null ||
+                passwordError != null ||
+                confirmPasswordError != null ||
+                nameError != null ||
+                schoolError != null ||
+                departmentError != null ||
+                studentIdError != null ||
+                phoneError != null
     }
-    
+
     // ===========================================
     // 유효성 검사 비즈니스 로직
     // ===========================================
-    
+
     /**
      * 이메일 유효성 검사
      */
@@ -85,7 +91,7 @@ data class UserSignUp(
             else -> null
         }
     }
-    
+
     /**
      * 비밀번호 유효성 검사
      */
@@ -99,7 +105,7 @@ data class UserSignUp(
             else -> null
         }
     }
-    
+
     /**
      * 비밀번호 확인 유효성 검사
      */
@@ -110,7 +116,7 @@ data class UserSignUp(
             else -> null
         }
     }
-    
+
     /**
      * 이름 유효성 검사
      */
@@ -121,27 +127,27 @@ data class UserSignUp(
             else -> null
         }
     }
-    
+
     /**
      * 학교 유효성 검사
      */
     fun validateSchool(): String? {
         return when {
-            school.isBlank() -> "학교를 선택해주세요."
+            universityId.isBlank() -> "학교를 선택해주세요."
             else -> null
         }
     }
-    
+
     /**
      * 학과 유효성 검사
      */
     fun validateDepartment(): String? {
         return when {
-            department.isBlank() -> "학과를 선택해주세요."
+            departmentId.isBlank() -> "학과를 선택해주세요."
             else -> null
         }
     }
-    
+
     /**
      * 학번 유효성 검사
      */
@@ -153,7 +159,18 @@ data class UserSignUp(
             else -> null
         }
     }
-    
+
+    /**
+     * 전화번호 유효성 검사 (예시로 추가, 필요에 따라 구현)
+     */
+    fun validatePhone(): String? {
+        return when {
+            phone.isBlank() -> "전화번호를 입력해주세요."
+            !Patterns.PHONE.matcher(phone).matches() -> "올바른 전화번호 형식을 입력해주세요."
+            else -> null
+        }
+    }
+
     /**
      * 전체 유효성 검사를 수행하고 에러가 포함된 새로운 인스턴스 반환
      */
@@ -165,10 +182,11 @@ data class UserSignUp(
             nameError = validateName(),
             schoolError = validateSchool(),
             departmentError = validateDepartment(),
-            studentIdError = validateStudentId()
+            studentIdError = validateStudentId(),
+            phoneError = validatePhone()
         )
     }
-    
+
     /**
      * 특정 필드만 유효성 검사를 수행하고 업데이트된 인스턴스 반환
      */
@@ -181,6 +199,7 @@ data class UserSignUp(
             ValidationField.SCHOOL -> copy(schoolError = validateSchool())
             ValidationField.DEPARTMENT -> copy(departmentError = validateDepartment())
             ValidationField.STUDENT_ID -> copy(studentIdError = validateStudentId())
+            ValidationField.PHONE -> copy(phoneError = validatePhone()) // 전화번호 유효성 검사는 별도로 구현 필요
         }
     }
 }
@@ -195,5 +214,6 @@ enum class ValidationField {
     NAME,
     SCHOOL,
     DEPARTMENT,
-    STUDENT_ID
+    STUDENT_ID,
+    PHONE
 }
