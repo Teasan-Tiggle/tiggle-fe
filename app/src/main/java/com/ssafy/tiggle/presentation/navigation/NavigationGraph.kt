@@ -22,7 +22,7 @@ import com.ssafy.tiggle.presentation.ui.piggybank.PiggyBankScreen
  */
 @Composable
 fun NavigationGraph() {
-    val startDestination = Screen.OpenAccount
+    val startDestination = Screen.Login
     val navBackStack = rememberNavBackStack(startDestination)
 
     Scaffold(
