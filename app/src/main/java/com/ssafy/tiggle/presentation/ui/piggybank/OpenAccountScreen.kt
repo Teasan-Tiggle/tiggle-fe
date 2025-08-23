@@ -35,10 +35,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ssafy.tiggle.R
+import com.ssafy.tiggle.domain.entity.account.OpenAccount
 import com.ssafy.tiggle.presentation.ui.components.TiggleAllAgreeCheckboxItem
 import com.ssafy.tiggle.presentation.ui.components.TiggleButton
 import com.ssafy.tiggle.presentation.ui.components.TiggleButtonVariant
@@ -791,4 +793,150 @@ private fun SuccessScreen(
         }
     }
 }
+
+/* ---------- Previews ---------- */
+
+@Preview(showBackground = true, name = "AccountInfoInput - 기본")
+@Composable
+fun Preview_AccountInfoInput() {
+    AccountInfoInputScreen(
+        uiState = OpenAccountState(
+            openAccountStep = OpenAccountStep.INFO,
+            piggyBankAccount = OpenAccount(
+                targetDonationAmount = 5000,
+                piggyBankName = "천사 꿀꿀이",
+                amountError = null,
+                piggyBankNameError = null,
+                certificateCode = 0,
+                codeError = null
+            ),
+            amountInput = "5000",
+            termsData = TermsData()
+        ),
+        onBackClick = {},
+        onTargetDonationAmountChange = {},
+        onPiggyBankNameChange = {},
+        onNextClick = {}
+    )
+}
+
+@Preview(showBackground = true, name = "QuickAmountRow - 선택")
+@Composable
+private fun Preview_QuickAmountRow() {
+    Column(Modifier.padding(16.dp)) {
+        QuickAmountRow(
+            selected = "5000",
+            onSelect = {}
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "TermsAgreement - 일부체크")
+@Composable
+fun Preview_TermsAgreement_Partial() {
+    TermsAgreementScreen(
+        uiState = OpenAccountState(
+            openAccountStep = OpenAccountStep.TERMS,
+            termsData = TermsData(
+                serviceTerms = true,
+                privacyPolicy = false,
+                financeTerms = false,
+                marketingOptional = false
+            )
+        ),
+        onBackClick = {},
+        onTermsChange = { _, _ -> },
+        onNextClick = {}
+    )
+}
+
+@Preview(showBackground = true, name = "TermsAgreement - 모두동의")
+@Composable
+fun Preview_TermsAgreement_All() {
+    TermsAgreementScreen(
+        uiState = OpenAccountState(
+            openAccountStep = OpenAccountStep.TERMS,
+            termsData = TermsData(
+                serviceTerms = true,
+                privacyPolicy = true,
+                financeTerms = true,
+                marketingOptional = true
+            )
+        ),
+        onBackClick = {},
+        onTermsChange = { _, _ -> },
+        onNextClick = {}
+    )
+}
+
+@Preview(showBackground = true, name = "Certificate - 본인인증 선택")
+@Composable
+fun Preview_CertificateScreen() {
+    CertificateScreen(
+        uiState = OpenAccountState(openAccountStep = OpenAccountStep.CERTIFICATION),
+        onBackClick = {},
+        onNextClick = {}
+    )
+}
+
+@Preview(showBackground = true, name = "Code - 입력 전")
+@Composable
+fun Preview_CodeScreen_Empty() {
+    CodeScreen(
+        uiState = OpenAccountState(
+            openAccountStep = OpenAccountStep.CODE,
+            piggyBankAccount = OpenAccount(
+                certificateCode = 0,
+                codeError = null
+            )
+        ),
+        onCodeChange = {},
+        onBackClick = {},
+        onNextClick = {}
+    )
+}
+
+@Preview(showBackground = true, name = "Code - 입력/정상")
+@Composable
+fun Preview_CodeScreen_Filled() {
+    CodeScreen(
+        uiState = OpenAccountState(
+            openAccountStep = OpenAccountStep.CODE,
+            piggyBankAccount = OpenAccount(
+                certificateCode = 123456,
+                codeError = null
+            )
+        ),
+        onCodeChange = {},
+        onBackClick = {},
+        onNextClick = {}
+    )
+}
+
+@Preview(showBackground = true, name = "Code - 에러")
+@Composable
+fun Preview_CodeScreen_Error() {
+    CodeScreen(
+        uiState = OpenAccountState(
+            openAccountStep = OpenAccountStep.CODE,
+            piggyBankAccount = OpenAccount(
+                certificateCode = 123450,
+                codeError = "인증번호가 일치하지 않습니다."
+            )
+        ),
+        onCodeChange = {},
+        onBackClick = {},
+        onNextClick = {}
+    )
+}
+
+@Preview(showBackground = true, name = "Success - 개설 완료")
+@Composable
+fun Preview_SuccessScreen() {
+    SuccessScreen(
+        uiState = OpenAccountState(openAccountStep = OpenAccountStep.SUCCESS),
+        onBackClick = {}
+    )
+}
+
 
