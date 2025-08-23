@@ -1,5 +1,7 @@
 package com.ssafy.tiggle.presentation.ui.auth.signup
 
+import com.ssafy.tiggle.domain.entity.Department
+import com.ssafy.tiggle.domain.entity.University
 import com.ssafy.tiggle.domain.entity.UserSignUp
 
 /**
@@ -14,7 +16,13 @@ data class SignUpUiState(
     val termsData: TermsData = TermsData(),
 
     // 사용자 정보
-    val userData: UserSignUp = UserSignUp()
+    val userData: UserSignUp = UserSignUp(),
+
+    // 대학교/학과 정보
+    val universities: List<University> = emptyList(),
+    val departments: List<Department> = emptyList(),
+    val isUniversitiesLoading: Boolean = false,
+    val isDepartmentsLoading: Boolean = false
 )
 
 

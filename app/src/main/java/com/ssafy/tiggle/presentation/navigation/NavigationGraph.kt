@@ -28,7 +28,7 @@ fun NavigationGraph() {
 
     Scaffold(
         bottomBar = {
-            if (navBackStack.last() != Screen.Login)
+            if (navBackStack.last() is BottomScreen)
                 BottomNavigation(navBackStack)
         }
     ) { innerPadding ->

@@ -1,12 +1,13 @@
 package com.ssafy.tiggle.di
 
-import com.ssafy.tiggle.data.datasource.remote.UserApiService
+import com.ssafy.tiggle.data.datasource.remote.AuthApiService
+import com.ssafy.tiggle.data.datasource.remote.PrettyHttpLoggingInterceptor
+import com.ssafy.tiggle.data.datasource.remote.UniversityApiService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import okhttp3.OkHttpClient
-import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
@@ -19,23 +20,21 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
-    private const val BASE_URL = "https://api.example.com/v1/"
+    private const val BASE_URL = "http://43.203.36.96/api/"
 
     @Provides
     @Singleton
-    fun provideHttpLoggingInterceptor(): HttpLoggingInterceptor {
-        return HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
-        }
+    fun providePrettyHttpLoggingInterceptor(): PrettyHttpLoggingInterceptor {
+        return PrettyHttpLoggingInterceptor()
     }
 
     @Provides
     @Singleton
     fun provideOkHttpClient(
-        loggingInterceptor: HttpLoggingInterceptor
+        prettyLoggingInterceptor: PrettyHttpLoggingInterceptor
     ): OkHttpClient {
         return OkHttpClient.Builder()
-            .addInterceptor(loggingInterceptor)
+            .addInterceptor(prettyLoggingInterceptor)
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
@@ -54,8 +53,14 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideUserApiService(retrofit: Retrofit): UserApiService {
-        return retrofit.create(UserApiService::class.java)
+    fun provideAuthApiService(retrofit: Retrofit): AuthApiService {
+        return retrofit.create(AuthApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideUniversityApiService(retrofit: Retrofit): UniversityApiService {
+        return retrofit.create(UniversityApiService::class.java)
     }
 
 }

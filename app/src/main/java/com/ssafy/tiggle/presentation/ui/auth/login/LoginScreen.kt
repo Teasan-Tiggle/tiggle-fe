@@ -23,7 +23,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.ssafy.tiggle.presentation.ui.components.TiggleButton
 import com.ssafy.tiggle.presentation.ui.components.TiggleScreenLayout
 import com.ssafy.tiggle.presentation.ui.components.TiggleTextField
@@ -36,7 +36,7 @@ import com.ssafy.tiggle.presentation.ui.theme.TiggleGrayText
 @Composable
 fun LoginScreen(
     modifier: Modifier = Modifier,
-    viewModel: LoginViewModel = viewModel(),
+    viewModel: LoginViewModel = hiltViewModel(),
     onLoginSuccess: () -> Unit = {},
     onSignUpClick: () -> Unit = {}
 ) {
@@ -150,50 +150,28 @@ private fun LoginScreenPreview() {
     )
 }
 
-@SuppressLint("ViewModelConstructorInComposable")
 @Preview(showBackground = true)
 @Composable
 private fun LoginScreenWithDataPreview() {
-    val viewModel = LoginViewModel().apply {
-        updateEmail("user@example.com")
-        updatePassword("password123")
-    }
-
     LoginScreen(
-        viewModel = viewModel,
         onLoginSuccess = {},
         onSignUpClick = {}
     )
 }
 
-@SuppressLint("ViewModelConstructorInComposable")
 @Preview(showBackground = true)
 @Composable
 private fun LoginScreenErrorPreview() {
-    val viewModel = LoginViewModel().apply {
-        updateEmail("invalid-email")
-        updatePassword("123") // 너무 짧은 비밀번호
-    }
-
     LoginScreen(
-        viewModel = viewModel,
         onLoginSuccess = {},
         onSignUpClick = {}
     )
 }
 
-@SuppressLint("ViewModelConstructorInComposable")
 @Preview(showBackground = true)
 @Composable
 private fun LoginScreenLoadingPreview() {
-    // 로딩 상태는 실제 앱에서 확인하고, Preview에서는 기본 상태로 표시
-    val viewModel = LoginViewModel().apply {
-        updateEmail("user@example.com")
-        updatePassword("password123")
-    }
-
     LoginScreen(
-        viewModel = viewModel,
         onLoginSuccess = {},
         onSignUpClick = {}
     )

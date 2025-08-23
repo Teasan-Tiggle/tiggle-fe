@@ -5,9 +5,10 @@ package com.ssafy.tiggle.data.model
  */
 data class SignUpRequestDto(
     val email: String,
-    val password: String,
     val name: String,
-    val school: String,
-    val department: String,
-    val studentId: String
+    val universityId: String,
+    val departmentId: String,
+    val studentId: String,
+    val password: String,
+    val phone: String
 )
