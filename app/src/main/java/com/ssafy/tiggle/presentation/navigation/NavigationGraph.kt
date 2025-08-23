@@ -16,6 +16,7 @@ import com.ssafy.tiggle.presentation.ui.auth.login.LoginScreen
 import com.ssafy.tiggle.presentation.ui.auth.signup.SignUpScreen
 import com.ssafy.tiggle.presentation.ui.piggybank.OpenAccountScreen
 import com.ssafy.tiggle.presentation.ui.piggybank.PiggyBankScreen
+import com.ssafy.tiggle.presentation.ui.piggybank.RegisterAccountScreen
 
 /**
  * 앱의 메인 네비게이션
@@ -78,6 +79,9 @@ fun NavigationGraph() {
                             onOpenAccountClick = {
                                 navBackStack.add(Screen.OpenAccount)
                             },
+                            onRegisterAccountClick = {
+                                navBackStack.add(Screen.RegisterAccount)
+                            },
                             onBackClick = {
                                 navBackStack.removeLastOrNull()
                             }
@@ -86,6 +90,10 @@ fun NavigationGraph() {
 
                     is Screen.OpenAccount -> NavEntry(key) {
                         OpenAccountScreen()
+                    }
+
+                    is Screen.RegisterAccount -> NavEntry(key) {
+                        RegisterAccountScreen()
                     }
 
                     else -> throw IllegalArgumentException("Unknown route: $key")

@@ -29,4 +29,7 @@ sealed interface Screen : NavKey {
 
     @Serializable
     object OpenAccount : Screen
+
+    @Serializable
+    object RegisterAccount : Screen
 }
