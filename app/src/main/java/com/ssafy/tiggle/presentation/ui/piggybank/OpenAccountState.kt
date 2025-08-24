@@ -8,9 +8,7 @@ data class OpenAccountState(
 
     val openAccountStep: OpenAccountStep = OpenAccountStep.INFO,
     val piggyBankAccount: OpenAccount = OpenAccount(),
-    val amountInput: String = "",
 
-    val certificateCode: String = "",
     // 약관 동의
     val termsData: TermsData = TermsData(),
 )
