@@ -19,7 +19,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ButtonDefaults.outlinedButtonBorder
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -583,10 +583,10 @@ fun CertificationScreen(
                     onClick = onResendClick,
                     enabled = !uiState.isLoading,
                     shape = RoundedCornerShape(12.dp),
-                    border = ButtonDefaults.outlinedButtonBorder,
+                    border = outlinedButtonBorder(enabled = !uiState.isLoading),
                     contentPadding = PaddingValues(horizontal = 18.dp, vertical = 8.dp)
                 ) {
-                   
+
                     Text("1원 재송금", color = TiggleBlue)
                 }
             }
