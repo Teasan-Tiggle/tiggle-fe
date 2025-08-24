@@ -112,6 +112,46 @@ object NetworkModule {
     fun provideUniversityApiService(retrofit: Retrofit): UniversityApiService =
         retrofit.create(UniversityApiService::class.java)
 
+    /** ⑤ AuthInterceptor */
+    @Provides
+    @Singleton
+    fun provideAuthInterceptor(
+        authDataSource: AuthDataSource,
+        @Named("refresh") authApi: AuthApiService
+    ): AuthInterceptor = AuthInterceptor(authDataSource, authApi)
+
+    /** ⑥ 인증 있는 Client */
+    @Provides
+    @Singleton
+    @Named("authClient")
+    fun provideAuthOkHttp(
+        pretty: PrettyHttpLoggingInterceptor,
+        authInterceptor: AuthInterceptor
+    ): OkHttpClient = OkHttpClient.Builder()
+        .addInterceptor(authInterceptor)   // ⬅️ 토큰 붙임
+        .addInterceptor(pretty)            // ⬅️ 로그
+        .connectTimeout(30, TimeUnit.SECONDS)
+        .readTimeout(30, TimeUnit.SECONDS)
+        .writeTimeout(30, TimeUnit.SECONDS)
+        .build()
+
+    /** ⑦ 일반 Retrofit (인증 필요한 API) */
+    @Provides
+    @Singleton
+    fun provideRetrofit(
+        @Named("authClient") client: OkHttpClient
+    ): Retrofit = Retrofit.Builder()
+        .baseUrl(BASE_URL)
+        .client(client)
+        .addConverterFactory(GsonConverterFactory.create())
+        .build()
+
+    /** ⑧ 서비스들 */
+    @Provides
+    @Singleton
+    fun provideUniversityApiService(retrofit: Retrofit): UniversityApiService =
+        retrofit.create(UniversityApiService::class.java)
+
     @Provides
     @Singleton
     fun providePiggyBankApiService(retrofit: Retrofit): PiggyBankApiService =
