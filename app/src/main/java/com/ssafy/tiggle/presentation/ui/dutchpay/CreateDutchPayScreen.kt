@@ -26,8 +26,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.ssafy.tiggle.domain.entity.UserSummary
 import com.ssafy.tiggle.core.utils.Formatter
+import com.ssafy.tiggle.domain.entity.UserSummary
 import com.ssafy.tiggle.presentation.ui.components.TiggleButton
 import com.ssafy.tiggle.presentation.ui.components.TiggleButtonVariant
 import com.ssafy.tiggle.presentation.ui.components.TiggleScreenLayout
@@ -221,7 +221,7 @@ private fun DutchPaySummary(totalAmount: Long, participantCount: Int, payMore: B
             Spacer(Modifier.height(8.dp))
             SummaryRow(label = "참여 인원", value = "${participantCount}명(나 포함)")
             Spacer(Modifier.height(8.dp))
-            SummaryRow(label = "1인당 금액", value = Formatter.formatCurrency(perHead, 2))
+            SummaryRow(label = "1인당 금액", value = Formatter.formatCurrency(perHead.toLong()))
             Spacer(Modifier.height(8.dp))
             SummaryRow(label = "내 결제 금액", value = Formatter.formatCurrency(myAmount))
         }
