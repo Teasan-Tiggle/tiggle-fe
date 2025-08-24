@@ -93,7 +93,12 @@ fun NavigationGraph() {
                     }
 
                     is Screen.RegisterAccount -> NavEntry(key) {
-                        RegisterAccountScreen()
+                        RegisterAccountScreen(
+                            onBackClick = { navBackStack.removeLastOrNull() },
+                            onFinish = {
+                                navBackStack.removeLastOrNull()
+                            }
+                        )
                     }
 
                     else -> throw IllegalArgumentException("Unknown route: $key")

@@ -1,4 +1,4 @@
-package com.ssafy.tiggle.domain.entity.account
+package com.ssafy.tiggle.domain.entity.piggybank
 
 
 data class OpenAccount(

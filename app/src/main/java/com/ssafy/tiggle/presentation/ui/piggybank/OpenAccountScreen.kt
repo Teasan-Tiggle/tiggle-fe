@@ -40,7 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ssafy.tiggle.R
-import com.ssafy.tiggle.domain.entity.account.OpenAccount
+import com.ssafy.tiggle.domain.entity.piggybank.OpenAccount
 import com.ssafy.tiggle.presentation.ui.components.TiggleAllAgreeCheckboxItem
 import com.ssafy.tiggle.presentation.ui.components.TiggleButton
 import com.ssafy.tiggle.presentation.ui.components.TiggleButtonVariant

@@ -1,15 +1,13 @@
-package com.ssafy.tiggle.domain.entity.account
+package com.ssafy.tiggle.domain.entity.piggybank
 
 data class RegisterAccount(
     val accountNum: String = "",
-    val owner:String="",
-    val code:Int=0,
-    val attemptsLeft: Int=3,
-    val bankName:String="",
-    val date:String="",
-
+    val code: String = "",
+    val attemptsLeft: Int = 3,
+    val date: String = "",
+    val verificationToken: String = "",
     val accountNumError: String? = null,
-    val codeError:String?=null
+    val codeError: String? = null
 ) {
     /** 숫자 외 문자를 제거한 정규화(붙여넣기 대비) */
     private fun sanitize(raw: String): String = raw.filter { it.isDigit() }
@@ -40,10 +38,12 @@ data class RegisterAccount(
                     accountNum
                 )
             )
+
             ValidationRegisterField.CODE ->
                 copy(codeError = validateCode(code.toString()))
         }
     }
+
     /**
      * 코드 유효성 검사
      */

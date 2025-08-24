@@ -1,6 +1,6 @@
 package com.ssafy.tiggle.presentation.ui.piggybank
 
-import com.ssafy.tiggle.domain.entity.account.OpenAccount
+import com.ssafy.tiggle.domain.entity.piggybank.OpenAccount
 
 data class OpenAccountState(
     val isLoading: Boolean = false,
