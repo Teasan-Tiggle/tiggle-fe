@@ -1,6 +1,6 @@
 package com.ssafy.tiggle.domain.usecase
 
-import com.ssafy.tiggle.domain.repository.UserRepository
+import com.ssafy.tiggle.domain.repository.AuthRepository
 import javax.inject.Inject
 
 /**
@@ -9,7 +9,7 @@ import javax.inject.Inject
  * 로그인 비즈니스 로직을 처리합니다.
  */
 class LoginUserUseCase @Inject constructor(
-    private val userRepository: UserRepository
+    private val authRepository: AuthRepository
 ) {
     /**
      * 로그인 실행
@@ -27,6 +27,6 @@ class LoginUserUseCase @Inject constructor(
         }
         
         // 로그인 실행
-        return userRepository.loginUser(email, password)
+        return authRepository.loginUser(email, password)
     }
 }

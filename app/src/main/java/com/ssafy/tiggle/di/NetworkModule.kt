@@ -6,6 +6,7 @@ import com.ssafy.tiggle.data.datasource.remote.AuthInterceptor
 import com.ssafy.tiggle.data.datasource.remote.FcmApiService
 import com.ssafy.tiggle.data.datasource.remote.PiggyBankApiService
 import com.ssafy.tiggle.data.datasource.remote.PrettyHttpLoggingInterceptor
+import com.ssafy.tiggle.data.datasource.remote.UserApiService
 import com.ssafy.tiggle.data.datasource.remote.UniversityApiService
 import dagger.Module
 import dagger.Provides
@@ -121,4 +122,9 @@ object NetworkModule {
     @Singleton
     fun provideFcmApiService(retrofit: Retrofit): FcmApiService =
         retrofit.create(FcmApiService::class.java)
+
+    @Provides
+    @Singleton
+    fun provideUserApiService(retrofit: Retrofit): UserApiService =
+        retrofit.create(UserApiService::class.java)
 }

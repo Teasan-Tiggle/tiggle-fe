@@ -14,6 +14,7 @@ import androidx.navigation3.ui.NavDisplay
 import androidx.navigation3.ui.rememberSceneSetupNavEntryDecorator
 import com.ssafy.tiggle.presentation.ui.auth.login.LoginScreen
 import com.ssafy.tiggle.presentation.ui.auth.signup.SignUpScreen
+import com.ssafy.tiggle.presentation.ui.dutchpay.CreateDutchPayScreen
 import com.ssafy.tiggle.presentation.ui.piggybank.OpenAccountScreen
 import com.ssafy.tiggle.presentation.ui.piggybank.PiggyBankScreen
 import com.ssafy.tiggle.presentation.ui.piggybank.RegisterAccountScreen
@@ -23,7 +24,7 @@ import com.ssafy.tiggle.presentation.ui.piggybank.RegisterAccountScreen
  */
 @Composable
 fun NavigationGraph() {
-    val startDestination = Screen.Login
+    val startDestination = Screen.CreateDutchPay
     val navBackStack = rememberNavBackStack(startDestination)
 
     Scaffold(
@@ -82,6 +83,9 @@ fun NavigationGraph() {
                             onRegisterAccountClick = {
                                 navBackStack.add(Screen.RegisterAccount)
                             },
+                            onStartDutchPayClick = {
+                                navBackStack.add(Screen.CreateDutchPay)
+                            },
                             onBackClick = {
                                 navBackStack.removeLastOrNull()
                             }
@@ -98,6 +102,13 @@ fun NavigationGraph() {
                             onFinish = {
                                 navBackStack.removeLastOrNull()
                             }
+                        )
+                    }
+
+                    is Screen.CreateDutchPay -> NavEntry(key) {
+                        CreateDutchPayScreen(
+                            onBackClick = { navBackStack.removeLastOrNull() },
+                            onFinish = { navBackStack.removeLastOrNull() }
                         )
                     }
 
