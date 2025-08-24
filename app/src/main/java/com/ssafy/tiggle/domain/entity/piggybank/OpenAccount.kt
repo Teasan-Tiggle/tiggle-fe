@@ -2,13 +2,16 @@ package com.ssafy.tiggle.domain.entity.piggybank
 
 
 data class OpenAccount(
-    val targetDonationAmount: Int = 0,
+    val targetDonationAmount: Long = 0L,
     val piggyBankName: String = "",
-    val certificateCode: Int = 0,
+    val certificateCode: String = "",
+    val phoneNum: String = "",
+    val attemptsLeft: Int = 3,
 
     val amountError: String? = null,
     val piggyBankNameError: String? = null,
     val codeError: String? = null,
+    val phoneNumError: String? = null
 ) {
     /**
      * 목표 금액 유효성 검사
@@ -45,6 +48,15 @@ data class OpenAccount(
         }
     }
 
+    fun validatePhoneNum(input: String): String? {
+        return when {
+            input.isBlank() -> "휴대폰 번호를 입력해주세요."
+            !input.matches(Regex("^[0-9]+$")) -> "숫자만 입력할 수 있습니다."
+            input.length != 11 -> "휴대폰 번호는 11자리여야 합니다."
+            else -> null
+        }
+    }
+
     /**
      * 전체 유효성 검사를 수행하고 에러가 포함된 새로운 인스턴스 반환
      */
@@ -52,7 +64,8 @@ data class OpenAccount(
         return this.copy(
             amountError = validateTargetDonationAmount(targetDonationAmount.toString()),
             piggyBankNameError = validatePiggyBankName(),
-            codeError = validateCode(certificateCode.toString())
+            codeError = validateCode(certificateCode.toString()),
+            phoneNumError = validatePhoneNum(phoneNum)
         )
     }
 
@@ -69,7 +82,10 @@ data class OpenAccount(
 
             ValidationField.ACCOUNTNAME -> copy(piggyBankNameError = validatePiggyBankName())
             ValidationField.CODE ->
-                copy(codeError = validateCode(certificateCode.toString()))
+                copy(codeError = validateCode(certificateCode))
+
+            ValidationField.PHONE ->
+                copy(phoneNumError = validatePhoneNum(phoneNum))
         }
     }
 
@@ -78,5 +94,6 @@ data class OpenAccount(
 enum class ValidationField {
     AMOUNT,
     ACCOUNTNAME,
-    CODE
+    CODE,
+    PHONE
 }

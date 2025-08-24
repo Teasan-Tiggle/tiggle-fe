@@ -2,11 +2,16 @@ package com.ssafy.tiggle.data.datasource.remote
 
 import com.ssafy.tiggle.data.model.BaseResponse
 import com.ssafy.tiggle.data.model.EmptyResponse
+import com.ssafy.tiggle.data.model.piggybank.request.CreatePiggyBankRequestDto
 import com.ssafy.tiggle.data.model.piggybank.request.PrimaryAccountRequestDto
+import com.ssafy.tiggle.data.model.piggybank.request.SendSMSRequestDto
 import com.ssafy.tiggle.data.model.piggybank.request.VerificationCheckRequestDto
 import com.ssafy.tiggle.data.model.piggybank.request.VerificationRequestDto
+import com.ssafy.tiggle.data.model.piggybank.request.VerifySMSRequestDto
 import com.ssafy.tiggle.data.model.piggybank.response.AccountHolderResponseDto
+import com.ssafy.tiggle.data.model.piggybank.response.CreatePiggyBankResponseDto
 import com.ssafy.tiggle.data.model.piggybank.response.VerificationCheckResponseDto
+import com.ssafy.tiggle.data.model.piggybank.response.VerifySMSResponseDto
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -33,5 +38,19 @@ interface PiggyBankApiService {
     suspend fun registerPrimaryAccount(
         @Body body: PrimaryAccountRequestDto
     ): BaseResponse<EmptyResponse>
+
+    @POST("piggybank")
+    suspend fun createPiggyBank(
+        @Body body: CreatePiggyBankRequestDto
+    ): BaseResponse<CreatePiggyBankResponseDto>
+
+    @POST("auth/sms/send")
+    suspend fun sendSMS(
+        @Body body: SendSMSRequestDto
+    ): BaseResponse<Unit>
+
+    @POST("auth/sms/verify")
+    suspend fun verifySMS(
+        @Body body: VerifySMSRequestDto
+    ): BaseResponse<VerifySMSResponseDto>
 }
-//0888315782686732

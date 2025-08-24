@@ -89,7 +89,12 @@ fun NavigationGraph() {
                     }
 
                     is Screen.OpenAccount -> NavEntry(key) {
-                        OpenAccountScreen()
+                        OpenAccountScreen(
+                            onBackClick = { navBackStack.removeLastOrNull() },
+                            onFinish = {
+                                navBackStack.removeLastOrNull()
+                            }
+                        )
                     }
 
                     is Screen.RegisterAccount -> NavEntry(key) {

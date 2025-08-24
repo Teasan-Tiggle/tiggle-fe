@@ -38,7 +38,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.ssafy.tiggle.R
 import com.ssafy.tiggle.domain.entity.piggybank.OpenAccount
 import com.ssafy.tiggle.presentation.ui.components.TiggleAllAgreeCheckboxItem
@@ -46,6 +46,7 @@ import com.ssafy.tiggle.presentation.ui.components.TiggleButton
 import com.ssafy.tiggle.presentation.ui.components.TiggleButtonVariant
 import com.ssafy.tiggle.presentation.ui.components.TiggleCheckboxItem
 import com.ssafy.tiggle.presentation.ui.components.TiggleScreenLayout
+import com.ssafy.tiggle.presentation.ui.components.TiggleTextField
 import com.ssafy.tiggle.presentation.ui.theme.AppTypography
 import com.ssafy.tiggle.presentation.ui.theme.TiggleBlue
 import com.ssafy.tiggle.presentation.ui.theme.TiggleGray
@@ -56,17 +57,25 @@ import com.ssafy.tiggle.presentation.ui.theme.TiggleSkyBlue
 @Composable
 fun OpenAccountScreen(
     modifier: Modifier = Modifier,
-    viewModel: OpenAccountViewModel = viewModel(),
-    onBackClick: () -> Unit = {}
-
+    viewModel: OpenAccountViewModel = hiltViewModel(),
+    onBackClick: () -> Unit = {},
+    onFinish: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
+    // 공통 Back 핸들러: 첫 단계면 pop, 아니면 단계-뒤로
+    val handleTopBack: () -> Unit = {
+        if (uiState.openAccountStep == OpenAccountStep.INFO) {
+            onBackClick()  // 스택에서 화면 제거
+        } else {
+            viewModel.goToPreviousStep()
+        }
+    }
     when (uiState.openAccountStep) {
         OpenAccountStep.INFO -> {
             AccountInfoInputScreen(
                 uiState = uiState,
-                onBackClick = onBackClick,
+                onBackClick = handleTopBack,
                 onTargetDonationAmountChange = viewModel::updateTargetDonationAmount,
                 onPiggyBankNameChange = viewModel::updatePiggyBankName,
                 onNextClick = { viewModel.goToNextStep() }
@@ -76,7 +85,7 @@ fun OpenAccountScreen(
         OpenAccountStep.TERMS -> {
             TermsAgreementScreen(
                 uiState = uiState,
-                onBackClick = { viewModel.goToPreviousStep() },
+                onBackClick = handleTopBack,
                 onTermsChange = viewModel::updateTermsAgreement,
                 onNextClick = { viewModel.goToNextStep() }
             )
@@ -85,8 +94,9 @@ fun OpenAccountScreen(
         OpenAccountStep.CERTIFICATION -> {
             CertificateScreen(
                 uiState = uiState,
-                onBackClick = { viewModel.goToPreviousStep() },
-                onNextClick = { viewModel.goToNextStep() }
+                onPhoneNumChange = viewModel::updatePhoneNum,
+                onBackClick = handleTopBack,
+                onNextClick = viewModel::sendSMS
             )
         }
 
@@ -94,15 +104,16 @@ fun OpenAccountScreen(
             CodeScreen(
                 uiState = uiState,
                 onCodeChange = viewModel::updateCode,
-                onBackClick = { viewModel.goToPreviousStep() },
-                onNextClick = { viewModel.goToNextStep() }
+                onBackClick = handleTopBack,
+                onNextClick = viewModel::verifySMS,
+                onResendClick = viewModel::resendSMS
             )
         }
 
         OpenAccountStep.SUCCESS -> {
             SuccessScreen(
                 uiState = uiState,
-                onBackClick = { viewModel.goToPreviousStep() },
+                onFinish = onFinish,
             )
         }
     }
@@ -122,7 +133,8 @@ fun AccountInfoInputScreen(
         onBackClick = onBackClick,
         bottomButton = {
             val nextEnabled =
-                uiState.amountInput.isNotBlank() &&                                   // 금액 입력됨
+                uiState.piggyBankAccount.targetDonationAmount.toString()
+                    .isNotBlank() &&                                   // 금액 입력됨
                         uiState.piggyBankAccount.piggyBankName.isNotBlank() &&       // 이름 입력됨
                         uiState.piggyBankAccount.amountError == null &&              // 금액 에러 없음
                         uiState.piggyBankAccount.piggyBankNameError == null          // 이름 에러 없음
@@ -186,7 +198,7 @@ fun AccountInfoInputScreen(
             Spacer(Modifier.height(8.dp))
 
             QuickAmountRow(
-                selected = uiState.amountInput,
+                selected = uiState.piggyBankAccount.targetDonationAmount.toString(),
                 onSelect = onTargetDonationAmountChange
             )
 
@@ -194,7 +206,7 @@ fun AccountInfoInputScreen(
 
             // 금액 직접 입력
             OutlinedTextField(
-                value = uiState.amountInput,
+                value = uiState.piggyBankAccount.targetDonationAmount.toString(),
                 onValueChange = onTargetDonationAmountChange,
                 placeholder = { Text("기부하고 싶은 금액을 입력하세요") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -454,11 +466,21 @@ private fun TermsAgreementScreen(
 fun CertificateScreen(
     uiState: OpenAccountState,
     onBackClick: () -> Unit,
+    onPhoneNumChange: (String) -> Unit,
     onNextClick: () -> Unit
 ) {
     TiggleScreenLayout(
         showBackButton = true,
         onBackClick = onBackClick,
+        bottomButton = {
+            TiggleButton(
+                text = "인증하기",
+                onClick = onNextClick,
+                enabled = !uiState.isLoading &&
+                        uiState.piggyBankAccount.phoneNum.isNotBlank() &&
+                        uiState.piggyBankAccount.phoneNumError == null
+            )
+        }
     ) {}
 
     Column(Modifier.padding(16.dp)) {
@@ -469,32 +491,32 @@ fun CertificateScreen(
                 .padding(60.dp, 15.dp),
             horizontalArrangement = Arrangement.Start
         ) {
-
             Text("티끌 계좌 개설", style = AppTypography.headlineLarge, fontSize = 20.sp)
-
         }
 
         Spacer(Modifier.height(100.dp))
 
-        //상단 설명
         Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.align(Alignment.CenterHorizontally)
+            modifier = Modifier.padding(20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = "본인 인증",
-                color = Color.Black,
-                fontSize = 22.sp,
-                style = AppTypography.headlineLarge,
-            )
-            Spacer(Modifier.height(6.dp))
-            Text(
-                text = "금융 서비스 이용을 위해\n 본인 인증을 진행해주세요.",
-                color = TiggleGrayText,
-                fontSize = 13.sp,
-                style = AppTypography.bodySmall,
-                textAlign = TextAlign.Center
-            )
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = "본인 인증",
+                    color = Color.Black,
+                    fontSize = 22.sp,
+                    style = AppTypography.headlineLarge,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    text = "금융 서비스 이용을 위해\n 본인 인증을 진행해주세요.",
+                    color = TiggleGrayText,
+                    fontSize = 13.sp,
+                    style = AppTypography.bodySmall,
+                    textAlign = TextAlign.Center
+                )
+            }
             Spacer(Modifier.height(100.dp))
 
             Row(
@@ -502,8 +524,7 @@ fun CertificateScreen(
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(16.dp))
                     .border(1.dp, TiggleGrayLight, RoundedCornerShape(16.dp))
-                    .padding(16.dp)
-                    .clickable { onNextClick() },
+                    .padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
@@ -522,7 +543,7 @@ fun CertificateScreen(
                 }
 
                 // 텍스트 영역
-                Column {
+                Column() {
                     Text(
                         text = "휴대폰 인증",
                         style = AppTypography.bodyLarge,
@@ -536,6 +557,18 @@ fun CertificateScreen(
                 }
             }
 
+
+        }
+        Column(Modifier.padding(20.dp, 0.dp)) {
+            TiggleTextField(
+                uiState.piggyBankAccount.phoneNum,
+                onValueChange = onPhoneNumChange,
+                label = "",
+                placeholder = "휴대폰 번호를 입력해주세요.",
+                keyboardType = KeyboardType.Number,
+                isError = uiState.piggyBankAccount.phoneNumError != null,
+                errorMessage = uiState.piggyBankAccount.phoneNumError
+            )
         }
     }
 }
@@ -548,10 +581,10 @@ fun CodeScreen(
     onNextClick: () -> Unit,
     onResendClick: () -> Unit = {}           // 재전송 클릭 (옵션)
 ) {
-    // codeInput: OpenAccountState에 문자열로 가지고 있다고 가정
+
     val code = uiState.piggyBankAccount.certificateCode
     val codeError = uiState.piggyBankAccount.codeError
-    val nextEnabled = code.toString().length == 6 && codeError == null
+    val nextEnabled = code.length == 6
 
     TiggleScreenLayout(
         showBackButton = true,
@@ -613,23 +646,36 @@ fun CodeScreen(
             Spacer(Modifier.height(12.dp))
 
             OtpCodeInput(
-                value = code.toString(),
+                value = code,
                 onValueChange = onCodeChange,
                 error = codeError,
                 boxCount = 6
             )
 
             Spacer(Modifier.height(12.dp))
-            if (codeError != null) {
-                Text(codeError, color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
-            } else {
-                Text(
-                    "인증번호 6자리를 입력해주세요.",
-                    style = AppTypography.bodySmall,
-                    color = TiggleGrayText,
-                    fontSize = 12.sp,
-                    textAlign = TextAlign.Center
-                )
+            when {
+                codeError != null -> {
+                    Text(codeError, color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
+                }
+
+                uiState.errorMessage != null -> {
+                    // ✅ 전역 에러 메시지도 보이게 (서버 오류/네트워크 오류 등)
+                    Text(
+                        uiState.errorMessage!!,
+                        color = MaterialTheme.colorScheme.error,
+                        fontSize = 12.sp
+                    )
+                }
+
+                else -> {
+                    Text(
+                        "인증번호 6자리를 입력해주세요.",
+                        style = AppTypography.bodySmall,
+                        color = TiggleGrayText,
+                        fontSize = 12.sp,
+                        textAlign = TextAlign.Center
+                    )
+                }
             }
         }
 
@@ -644,7 +690,11 @@ fun CodeScreen(
                 .padding(vertical = 12.dp),
             contentAlignment = Alignment.Center
         ) {
-            Text("남은 인증 시도 횟수: 3회", style = AppTypography.bodySmall, color = Color.Black)
+            Text(
+                "남은 인증 시도 횟수: ${uiState.piggyBankAccount.attemptsLeft}회",
+                style = AppTypography.bodySmall,
+                color = Color.Black
+            )
         }
 
         Spacer(Modifier.height(36.dp))
@@ -735,15 +785,15 @@ private fun OtpCodeInput(
 @Composable
 private fun SuccessScreen(
     uiState: OpenAccountState,
-    onBackClick: () -> Unit,
+    onFinish: () -> Unit,
 ) {
     TiggleScreenLayout(
-        showBackButton = true,
-        onBackClick = onBackClick,
+        showBackButton = false,
         bottomButton = {
             TiggleButton(
                 text = "확인",
-                onClick = {}
+                onClick = onFinish,
+                enabled = true
             )
         }
     ) {}
@@ -807,10 +857,9 @@ fun Preview_AccountInfoInput() {
                 piggyBankName = "천사 꿀꿀이",
                 amountError = null,
                 piggyBankNameError = null,
-                certificateCode = 0,
+                certificateCode = "",
                 codeError = null
             ),
-            amountInput = "5000",
             termsData = TermsData()
         ),
         onBackClick = {},
@@ -875,7 +924,8 @@ fun Preview_CertificateScreen() {
     CertificateScreen(
         uiState = OpenAccountState(openAccountStep = OpenAccountStep.CERTIFICATION),
         onBackClick = {},
-        onNextClick = {}
+        onNextClick = {},
+        onPhoneNumChange = {}
     )
 }
 
@@ -886,7 +936,7 @@ fun Preview_CodeScreen_Empty() {
         uiState = OpenAccountState(
             openAccountStep = OpenAccountStep.CODE,
             piggyBankAccount = OpenAccount(
-                certificateCode = 0,
+                certificateCode = "",
                 codeError = null
             )
         ),
@@ -903,7 +953,7 @@ fun Preview_CodeScreen_Filled() {
         uiState = OpenAccountState(
             openAccountStep = OpenAccountStep.CODE,
             piggyBankAccount = OpenAccount(
-                certificateCode = 123456,
+                certificateCode = "123456",
                 codeError = null
             )
         ),
@@ -920,7 +970,7 @@ fun Preview_CodeScreen_Error() {
         uiState = OpenAccountState(
             openAccountStep = OpenAccountStep.CODE,
             piggyBankAccount = OpenAccount(
-                certificateCode = 123450,
+                certificateCode = "123450",
                 codeError = "인증번호가 일치하지 않습니다."
             )
         ),
@@ -935,7 +985,7 @@ fun Preview_CodeScreen_Error() {
 fun Preview_SuccessScreen() {
     SuccessScreen(
         uiState = OpenAccountState(openAccountStep = OpenAccountStep.SUCCESS),
-        onBackClick = {}
+        onFinish = {}
     )
 }
 

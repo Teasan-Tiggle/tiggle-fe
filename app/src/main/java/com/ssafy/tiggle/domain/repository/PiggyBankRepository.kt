@@ -1,5 +1,6 @@
 package com.ssafy.tiggle.domain.repository
 
+import com.ssafy.tiggle.data.model.piggybank.response.VerifySMSResponseDto
 import com.ssafy.tiggle.domain.entity.piggybank.AccountHolder
 
 interface PiggyBankRepository {
@@ -10,4 +11,8 @@ interface PiggyBankRepository {
         accountNo: String,
         verificationToken: String
     ): Result<Unit>
+
+    suspend fun createPiggyBank(name: String, targetAmount: Long, esgCategoryId: Int): Result<Unit>
+    suspend fun sendSMS(phone: String, purpose: String): Result<Unit>
+    suspend fun verifySMS(phone: String, code: String, purpose: String): Result<VerifySMSResponseDto>
 }
