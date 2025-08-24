@@ -23,8 +23,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -46,7 +44,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ssafy.tiggle.R
+import com.ssafy.tiggle.core.utils.Formatter
 import com.ssafy.tiggle.presentation.ui.components.TiggleScreenLayout
+import com.ssafy.tiggle.presentation.ui.components.TiggleSwitchRow
 import com.ssafy.tiggle.presentation.ui.theme.AppTypography
 import com.ssafy.tiggle.presentation.ui.theme.TiggleBlue
 import com.ssafy.tiggle.presentation.ui.theme.TiggleGray
@@ -58,6 +58,7 @@ fun PiggyBankScreen(
     modifier: Modifier = Modifier,
     onOpenAccountClick: () -> Unit = {},
     onRegisterAccountClick: () -> Unit = {},
+    onStartDutchPayClick: () -> Unit = {},
     onBackClick: () -> Unit = {},
     viewModel: PiggyBankViewModel = viewModel()
 ) {
@@ -122,13 +123,13 @@ fun PiggyBankScreen(
             if (uiState.hasPiggyBank) {
                 DutchButtonsRow(
                     onStatus = {},
-                    onStart = {}
+                    onStart = onStartDutchPayClick
                 )
             }
             Spacer(Modifier.height(18.dp))
 
             // 스위치 섹션
-            SettingSwitchRow(
+            TiggleSwitchRow(
                 title = "잔돈 자동 기부",
                 subtitle = "매일 잔정에 1,000원 미만 잔돈을 자동으로 기부합니다",
                 checked = uiState.changeLeftoverDonate,
@@ -142,7 +143,7 @@ fun PiggyBankScreen(
             )
 
             // 스위치 섹션 2
-            SettingSwitchRow(
+            TiggleSwitchRow(
                 title = "목표 달성 자동 기부",
                 subtitle = "더치페이 할 때 남는 자투리 금액을 기부할 수 있습니다",
                 checked = uiState.achieveGoalDonate,
@@ -202,42 +203,7 @@ private fun DottedActionCard(
     }
 }
 
-@Composable
-private fun SettingSwitchRow(
-    title: String,
-    subtitle: String,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 10.dp, vertical = 19.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(title, color = Color.Black, fontSize = 15.sp, style = AppTypography.bodyLarge)
-            Spacer(Modifier.height(4.dp))
-            Text(
-                subtitle,
-                color = TiggleGrayText,
-                fontSize = 10.sp,
-                style = AppTypography.bodySmall
-            )
-        }
-        Switch(
-            checked = checked,
-            onCheckedChange = onCheckedChange,
-            colors = SwitchDefaults.colors(
-                checkedThumbColor = Color.White,
-                checkedTrackColor = TiggleBlue,
-                uncheckedThumbColor = Color.White,
-                uncheckedTrackColor = TiggleGray
-            ),
-            modifier = Modifier.size(10.dp, 5.dp)
-        )
-    }
-}
+// moved: replaced by TiggleSwitchRow in components
 
 /** 점선 둥근 사각 보더 */
 private fun Modifier.drawDottedRoundRect(cornerRadius: Dp) = this.then(
@@ -308,7 +274,7 @@ private fun TodaySavingBanner(amount: Int, lastWeek: Int, rounded: Int) {
                 )
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    "지난주 잔액 ${lastWeek.toMoney()} → ${rounded.toMoney()}원",
+                    "지난주 잔액 ${Formatter.formatCurrency(lastWeek.toLong())} → ${Formatter.formatCurrency(rounded.toLong())}",
                     color = Color(0xE6FFFFFF),
                     style = AppTypography.bodySmall
                 )
@@ -372,7 +338,7 @@ private fun AccountCard(bank: String, name: String, number: String, balance: Int
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text("잔액", color = TiggleGrayText, style = AppTypography.bodySmall)
             Text(
-                "${balance.toMoney()}원",
+                Formatter.formatCurrency(balance.toLong()),
                 color = Color.Black,
                 fontSize = 22.sp,
                 fontWeight = FontWeight.SemiBold
@@ -410,7 +376,6 @@ private fun DutchButtonsRow(onStatus: () -> Unit, onStart: () -> Unit) {
     }
 }
 
-private fun Int.toMoney(): String = "%,d".format(this)
 
 @Preview
 @Composable
