@@ -1,7 +1,11 @@
 package com.ssafy.tiggle.di
 
+import com.ssafy.tiggle.data.repository.FcmRepositoryImpl
+import com.ssafy.tiggle.data.repository.PiggyBankRepositoryImpl
 import com.ssafy.tiggle.data.repository.UniversityRepositoryImpl
 import com.ssafy.tiggle.data.repository.UserRepositoryImpl
+import com.ssafy.tiggle.domain.repository.FcmRepository
+import com.ssafy.tiggle.domain.repository.PiggyBankRepository
 import com.ssafy.tiggle.domain.repository.UniversityRepository
 import com.ssafy.tiggle.domain.repository.UserRepository
 import dagger.Binds
@@ -30,4 +34,15 @@ abstract class RepositoryModule {
         universityRepositoryImpl: UniversityRepositoryImpl
     ): UniversityRepository
 
+    @Binds
+    @Singleton
+    abstract fun bindPiggyBankRepository(
+        piggyBankRepositoryImpl: PiggyBankRepositoryImpl
+    ): PiggyBankRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindFcmRepository(
+        fcmRepositoryImpl: FcmRepositoryImpl
+    ): FcmRepository
 }

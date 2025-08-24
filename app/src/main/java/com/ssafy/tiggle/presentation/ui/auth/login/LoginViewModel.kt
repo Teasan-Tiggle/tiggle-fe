@@ -3,6 +3,7 @@ package com.ssafy.tiggle.presentation.ui.auth.login
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ssafy.tiggle.core.fcm.FcmTokenUploader
 import com.ssafy.tiggle.domain.usecase.LoginUserUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,7 +17,9 @@ import javax.inject.Inject
  */
 @HiltViewModel
 class LoginViewModel @Inject constructor(
-    private val loginUserUseCase: LoginUserUseCase
+    private val loginUserUseCase: LoginUserUseCase,
+    private val fcmTokenUploader: FcmTokenUploader
+
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LoginUiState())
@@ -79,6 +82,7 @@ class LoginViewModel @Inject constructor(
                 .onSuccess {
                     // 로그인 성공
                     Log.d("LoginViewModel", "🎉 로그인 성공!")
+                    fcmTokenUploader.upload()
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         isLoginSuccess = true,

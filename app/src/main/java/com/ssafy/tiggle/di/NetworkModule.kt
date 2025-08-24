@@ -3,6 +3,8 @@ package com.ssafy.tiggle.di
 import com.ssafy.tiggle.data.datasource.local.AuthDataSource
 import com.ssafy.tiggle.data.datasource.remote.AuthApiService
 import com.ssafy.tiggle.data.datasource.remote.AuthInterceptor
+import com.ssafy.tiggle.data.datasource.remote.FcmApiService
+import com.ssafy.tiggle.data.datasource.remote.PiggyBankApiService
 import com.ssafy.tiggle.data.datasource.remote.PrettyHttpLoggingInterceptor
 import com.ssafy.tiggle.data.datasource.remote.UniversityApiService
 import dagger.Module
@@ -30,7 +32,7 @@ object NetworkModule {
     fun providePrettyHttpLoggingInterceptor(): PrettyHttpLoggingInterceptor =
         PrettyHttpLoggingInterceptor()
 
-    /** ① 인증 없음: 로그인/재발급 등 */
+    /** 인증 없음: 로그인/재발급 등 */
     @Provides
     @Singleton
     @Named("noAuthClient")
@@ -43,7 +45,7 @@ object NetworkModule {
         .writeTimeout(30, TimeUnit.SECONDS)
         .build()
 
-    /** ② no-auth Retrofit (auth 전용) */
+    /** no-auth Retrofit (auth 전용) */
     @Provides
     @Singleton
     @Named("noAuthRetrofit")
@@ -55,14 +57,14 @@ object NetworkModule {
         .addConverterFactory(GsonConverterFactory.create())
         .build()
 
-    /** ③ 기본 AuthApiService (UserRepositoryImpl에서 사용됨) */
+    /** AuthApiService (UserRepositoryImpl에서 사용됨) */
     @Provides
     @Singleton
     fun provideDefaultAuthApiService(
         @Named("noAuthRetrofit") retrofit: Retrofit
     ): AuthApiService = retrofit.create(AuthApiService::class.java)
 
-    /** ④ refresh 전용 AuthApiService (재발급에서만 사용) */
+    /** refresh 전용 AuthApiService (재발급에서만 사용) */
     @Provides
     @Singleton
     @Named("refresh")
@@ -93,7 +95,7 @@ object NetworkModule {
         .writeTimeout(30, TimeUnit.SECONDS)
         .build()
 
-    /** ⑦ 일반 Retrofit (인증 필요한 API) */
+    /** 일반 Retrofit (인증 필요한 API) */
     @Provides
     @Singleton
     fun provideRetrofit(
@@ -104,10 +106,19 @@ object NetworkModule {
         .addConverterFactory(GsonConverterFactory.create())
         .build()
 
-    /** ⑧ 서비스들 */
+    /** 서비스들 */
     @Provides
     @Singleton
     fun provideUniversityApiService(retrofit: Retrofit): UniversityApiService =
         retrofit.create(UniversityApiService::class.java)
 
+    @Provides
+    @Singleton
+    fun providePiggyBankApiService(retrofit: Retrofit): PiggyBankApiService =
+        retrofit.create(PiggyBankApiService::class.java)
+
+    @Provides
+    @Singleton
+    fun provideFcmApiService(retrofit: Retrofit): FcmApiService =
+        retrofit.create(FcmApiService::class.java)
 }

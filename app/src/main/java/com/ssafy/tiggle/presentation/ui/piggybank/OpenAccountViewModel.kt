@@ -1,7 +1,7 @@
 package com.ssafy.tiggle.presentation.ui.piggybank
 
 import androidx.lifecycle.ViewModel
-import com.ssafy.tiggle.domain.entity.account.ValidationField
+import com.ssafy.tiggle.domain.entity.piggybank.ValidationField
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
