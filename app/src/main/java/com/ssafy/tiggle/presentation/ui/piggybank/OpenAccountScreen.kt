@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ssafy.tiggle.R
+import com.ssafy.tiggle.core.utils.Formatter
 import com.ssafy.tiggle.domain.entity.piggybank.OpenAccount
 import com.ssafy.tiggle.presentation.ui.components.TiggleAllAgreeCheckboxItem
 import com.ssafy.tiggle.presentation.ui.components.TiggleButton
@@ -310,7 +311,7 @@ private fun AmountOptionChip(
         contentPadding = PaddingValues(vertical = 10.dp)
     ) {
         Text(
-            text = "%,d원".format(amount),
+            text = Formatter.formatCurrency(amount.toLong()),
             style = AppTypography.bodyMedium,
             textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth(),
