@@ -63,7 +63,7 @@ fun DutchpayRecieveScreen(
             uiState.dutchPayDetail?.let { detail ->
                 if (!detail.isCreator) {
                     TiggleButton(
-                        text = "t",
+                        text = "송금하기",
                         onClick = onPaymentClick,
                         enabled = !uiState.isLoading,
                         isLoading = false,
@@ -199,7 +199,7 @@ private fun DutchPayPaymentContent(
                 Spacer(modifier = Modifier.height(8.dp))
                 DetailRow(label = "총 금액", value = Formatter.formatCurrency(detail.totalAmount))
                 Spacer(modifier = Modifier.height(8.dp))
-                DetailRow(label = "요청 일시", value = detail.requestedAt)
+                DetailRow(label = "요청 일시", value = Formatter.formatDateTime(detail.requestedAt))
             }
         }
 
