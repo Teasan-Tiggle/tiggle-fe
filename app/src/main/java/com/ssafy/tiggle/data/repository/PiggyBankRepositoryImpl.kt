@@ -2,6 +2,7 @@ package com.ssafy.tiggle.data.repository
 
 import com.ssafy.tiggle.data.datasource.remote.PiggyBankApiService
 import com.ssafy.tiggle.data.model.piggybank.request.CreatePiggyBankRequestDto
+import com.ssafy.tiggle.data.model.piggybank.request.PiggyBankSettingRequestDto
 import com.ssafy.tiggle.data.model.piggybank.request.PrimaryAccountRequestDto
 import com.ssafy.tiggle.data.model.piggybank.request.SendSMSRequestDto
 import com.ssafy.tiggle.data.model.piggybank.request.VerificationCheckRequestDto
@@ -10,6 +11,9 @@ import com.ssafy.tiggle.data.model.piggybank.request.VerifySMSRequestDto
 import com.ssafy.tiggle.data.model.piggybank.response.VerifySMSResponseDto
 import com.ssafy.tiggle.data.model.piggybank.response.toDomain
 import com.ssafy.tiggle.domain.entity.piggybank.AccountHolder
+import com.ssafy.tiggle.domain.entity.piggybank.MainAccount
+import com.ssafy.tiggle.domain.entity.piggybank.PiggyBank
+import com.ssafy.tiggle.domain.entity.piggybank.PiggyBankAccount
 import com.ssafy.tiggle.domain.repository.PiggyBankRepository
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -141,6 +145,79 @@ class PiggyBankRepositoryImpl @Inject constructor(
                 Result.success(res.data)
             } else {
                 Result.failure(Exception(res.message ?: "인증 코드 검증에 실패했습니다."))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getMainAccount(): Result<MainAccount> {
+        return try {
+            val response = piggyBankApiService.getMainAccount()
+
+            if (response.result && response.data != null) {
+                Result.success(response.data.toDomain())
+            } else {
+                Result.failure(Exception(response.message ?: "주계좌 정보를 불러오기에 실패했습니다."))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getPiggyBankAccount(): Result<PiggyBankAccount> {
+        return try {
+            val response = piggyBankApiService.getPiggyBankAccount()
+
+            if (response.result && response.data != null) {
+                Result.success(response.data.toDomain())
+            } else {
+                Result.failure(Exception(response.message ?: "저금통 계좌 정보를 불러오기에 실패했습니다."))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun setPiggyBankSetting(
+        name: String?,
+        targetAmount: Long?,
+        autoDonation: Boolean?,
+        autoSaving: Boolean?,
+        esgCategory: Int?
+    ): Result<PiggyBank> {
+        return try {
+            val response = piggyBankApiService.setPiggyBankSetting(
+                PiggyBankSettingRequestDto(
+                    name,
+                    targetAmount,
+                    autoDonation,
+                    autoSaving,
+                    esgCategory
+                )
+            )
+
+            if (response.result && response.data != null) {
+                Result.success(response.data.toDomain())
+            } else {
+                Result.failure(Exception(response.message ?: "저금통 설정에 실패했습니다."))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+
+    }
+
+    override suspend fun setEsgCategory(categoryId: Int): Result<PiggyBank> {
+        return try {
+            val response = piggyBankApiService.setEsgCategory(
+                categoryId = categoryId
+            )
+
+            if (response.result && response.data != null) {
+                Result.success(response.data.toDomain())
+            } else {
+                Result.failure(Exception(response.message ?: "카테고리 설정에 실패했습니다."))
             }
         } catch (e: Exception) {
             Result.failure(e)
