@@ -1,6 +1,6 @@
 package com.ssafy.tiggle.domain.repository
 
-import com.ssafy.tiggle.domain.entity.UserSignUp
+import com.ssafy.tiggle.domain.entity.auth.UserSignUp
 
 interface AuthRepository {
     suspend fun signUpUser(userSignUp: UserSignUp): Result<Unit>

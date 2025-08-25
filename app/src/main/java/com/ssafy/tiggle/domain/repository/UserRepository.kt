@@ -1,6 +1,6 @@
 package com.ssafy.tiggle.domain.repository
 
-import com.ssafy.tiggle.domain.entity.UserSummary
+import com.ssafy.tiggle.domain.entity.dutchpay.UserSummary
 
 /**
  * 사용자 관련 Repository 인터페이스

@@ -1,7 +1,7 @@
 package com.ssafy.tiggle.domain.repository
 
-import com.ssafy.tiggle.domain.entity.Department
-import com.ssafy.tiggle.domain.entity.University
+import com.ssafy.tiggle.domain.entity.auth.Department
+import com.ssafy.tiggle.domain.entity.auth.University
 
 /**
  * 대학교/학과 관련 Repository 인터페이스

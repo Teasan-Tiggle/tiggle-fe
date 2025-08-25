@@ -1,11 +1,13 @@
 package com.ssafy.tiggle.di
 
-import com.ssafy.tiggle.data.repository.FcmRepositoryImpl
 import com.ssafy.tiggle.data.repository.AuthRepositoryImpl
+import com.ssafy.tiggle.data.repository.DutchPayRepositoryImpl
+import com.ssafy.tiggle.data.repository.FcmRepositoryImpl
 import com.ssafy.tiggle.data.repository.PiggyBankRepositoryImpl
 import com.ssafy.tiggle.data.repository.UniversityRepositoryImpl
 import com.ssafy.tiggle.data.repository.UserRepositoryImpl
 import com.ssafy.tiggle.domain.repository.AuthRepository
+import com.ssafy.tiggle.domain.repository.DutchPayRepository
 import com.ssafy.tiggle.domain.repository.FcmRepository
 import com.ssafy.tiggle.domain.repository.PiggyBankRepository
 import com.ssafy.tiggle.domain.repository.UniversityRepository
@@ -53,4 +55,10 @@ abstract class RepositoryModule {
     abstract fun bindFcmRepository(
         fcmRepositoryImpl: FcmRepositoryImpl
     ): FcmRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindDutchPayRepository(
+        dutchPayRepositoryImpl: DutchPayRepositoryImpl
+    ): DutchPayRepository
 }

@@ -1,13 +1,15 @@
 package com.ssafy.tiggle.di
 
+import com.ssafy.tiggle.core.network.AuthInterceptor
+import com.ssafy.tiggle.core.network.LoggingCookieJar
+import com.ssafy.tiggle.core.network.PrettyHttpLoggingInterceptor
 import com.ssafy.tiggle.data.datasource.local.AuthDataSource
 import com.ssafy.tiggle.data.datasource.remote.AuthApiService
-import com.ssafy.tiggle.data.datasource.remote.AuthInterceptor
+import com.ssafy.tiggle.data.datasource.remote.DutchPayApiService
 import com.ssafy.tiggle.data.datasource.remote.FcmApiService
 import com.ssafy.tiggle.data.datasource.remote.PiggyBankApiService
-import com.ssafy.tiggle.data.datasource.remote.PrettyHttpLoggingInterceptor
-import com.ssafy.tiggle.data.datasource.remote.UserApiService
 import com.ssafy.tiggle.data.datasource.remote.UniversityApiService
+import com.ssafy.tiggle.data.datasource.remote.UserApiService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -33,13 +35,19 @@ object NetworkModule {
     fun providePrettyHttpLoggingInterceptor(): PrettyHttpLoggingInterceptor =
         PrettyHttpLoggingInterceptor()
 
+    @Provides
+    @Singleton
+    fun provideCookieJar(): LoggingCookieJar = LoggingCookieJar()
+
     /** 인증 없음: 로그인/재발급 등 */
     @Provides
     @Singleton
     @Named("noAuthClient")
     fun provideNoAuthOkHttp(
-        pretty: PrettyHttpLoggingInterceptor
+        pretty: PrettyHttpLoggingInterceptor,
+        cookieJar: LoggingCookieJar
     ): OkHttpClient = OkHttpClient.Builder()
+        .cookieJar(cookieJar)
         .addInterceptor(pretty)
         .connectTimeout(30, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)
@@ -87,8 +95,10 @@ object NetworkModule {
     @Named("authClient")
     fun provideAuthOkHttp(
         pretty: PrettyHttpLoggingInterceptor,
-        authInterceptor: AuthInterceptor
+        authInterceptor: AuthInterceptor,
+        cookieJar: LoggingCookieJar
     ): OkHttpClient = OkHttpClient.Builder()
+        .cookieJar(cookieJar)
         .addInterceptor(authInterceptor)   // ⬅️ 토큰 붙임
         .addInterceptor(pretty)            // ⬅️ 로그
         .connectTimeout(30, TimeUnit.SECONDS)
@@ -127,4 +137,9 @@ object NetworkModule {
     @Singleton
     fun provideUserApiService(retrofit: Retrofit): UserApiService =
         retrofit.create(UserApiService::class.java)
+
+    @Provides
+    @Singleton
+    fun provideDutchPayApiService(retrofit: Retrofit): DutchPayApiService =
+        retrofit.create(DutchPayApiService::class.java)
 }

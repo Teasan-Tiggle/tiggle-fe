@@ -1,6 +1,6 @@
-package com.ssafy.tiggle.domain.usecase
+package com.ssafy.tiggle.domain.usecase.dutchpay
 
-import com.ssafy.tiggle.domain.entity.UserSummary
+import com.ssafy.tiggle.domain.entity.dutchpay.UserSummary
 import com.ssafy.tiggle.domain.repository.UserRepository
 import javax.inject.Inject
 
@@ -11,5 +11,3 @@ class GetAllUsersUseCase @Inject constructor(
         return userRepository.getAllUsers()
     }
 }
-
-

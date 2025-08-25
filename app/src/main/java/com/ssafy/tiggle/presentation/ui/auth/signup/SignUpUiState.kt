@@ -1,8 +1,8 @@
 package com.ssafy.tiggle.presentation.ui.auth.signup
 
-import com.ssafy.tiggle.domain.entity.Department
-import com.ssafy.tiggle.domain.entity.University
-import com.ssafy.tiggle.domain.entity.UserSignUp
+import com.ssafy.tiggle.domain.entity.auth.Department
+import com.ssafy.tiggle.domain.entity.auth.University
+import com.ssafy.tiggle.domain.entity.auth.UserSignUp
 
 /**
  * 회원가입 전체 과정의 UI 상태

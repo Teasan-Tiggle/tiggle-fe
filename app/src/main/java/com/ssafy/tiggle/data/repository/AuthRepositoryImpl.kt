@@ -7,7 +7,7 @@ import com.ssafy.tiggle.data.datasource.remote.AuthApiService
 import com.ssafy.tiggle.data.model.BaseResponse
 import com.ssafy.tiggle.data.model.LoginRequestDto
 import com.ssafy.tiggle.data.model.SignUpRequestDto
-import com.ssafy.tiggle.domain.entity.UserSignUp
+import com.ssafy.tiggle.domain.entity.auth.UserSignUp
 import com.ssafy.tiggle.domain.repository.AuthRepository
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -52,7 +52,8 @@ class AuthRepositoryImpl @Inject constructor(
                     else -> {
                         if (!errorBody.isNullOrEmpty()) {
                             try {
-                                val errorResponse = Gson().fromJson(errorBody, BaseResponse::class.java)
+                                val errorResponse =
+                                    Gson().fromJson(errorBody, BaseResponse::class.java)
                                 errorResponse.message ?: "회원가입에 실패했습니다. (${response.code()})"
                             } catch (e: Exception) {
                                 "회원가입에 실패했습니다. (${response.code()})"
@@ -83,16 +84,10 @@ class AuthRepositoryImpl @Inject constructor(
                 val body = response.body()
                 if (body != null && body.result) {
                     val newAccess = stripBearer(response.headers()["Authorization"])
-                    val setCookies = response.headers().values("Set-Cookie")
-                    authDataSource.saveSetCookies(setCookies)
-
-                    val cookieRefresh = setCookies.firstOrNull { it.startsWith("refreshToken=") }
-                        ?.substringAfter("refreshToken=")?.substringBefore(";")
-
-                    if (newAccess.isBlank() || cookieRefresh.isNullOrBlank()) {
+                    if (newAccess.isBlank()) {
                         Result.failure(Exception("인증 토큰을 받을 수 없습니다."))
                     } else {
-                        authDataSource.saveTokens(newAccess, cookieRefresh)
+                        authDataSource.saveAccessToken(newAccess)
                         Result.success(Unit)
                     }
                 } else {
@@ -110,7 +105,8 @@ class AuthRepositoryImpl @Inject constructor(
                     else -> {
                         if (!errorBody.isNullOrEmpty()) {
                             try {
-                                val errorResponse = Gson().fromJson(errorBody, BaseResponse::class.java)
+                                val errorResponse =
+                                    Gson().fromJson(errorBody, BaseResponse::class.java)
                                 errorResponse.message ?: "로그인에 실패했습니다. (${response.code()})"
                             } catch (e: Exception) {
                                 "로그인에 실패했습니다. (${response.code()})"

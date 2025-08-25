@@ -39,7 +39,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ssafy.tiggle.R
-import com.ssafy.tiggle.domain.entity.UserSummary
+import com.ssafy.tiggle.domain.entity.dutchpay.UserSummary
 import com.ssafy.tiggle.presentation.ui.theme.TiggleBlue
 import com.ssafy.tiggle.presentation.ui.theme.TiggleGrayLight
 import com.ssafy.tiggle.presentation.ui.theme.TiggleGrayText
@@ -140,9 +140,11 @@ private fun UserRow(user: UserSummary, isSelected: Boolean, onClick: () -> Unit)
             )
         }
 
-        Column(modifier = Modifier
-            .weight(1f)
-            .padding(start = 12.dp)) {
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .padding(start = 12.dp)
+        ) {
             Text(text = user.name, color = Color.Black)
         }
 

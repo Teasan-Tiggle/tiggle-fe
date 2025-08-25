@@ -24,7 +24,7 @@ import com.ssafy.tiggle.presentation.ui.piggybank.RegisterAccountScreen
  */
 @Composable
 fun NavigationGraph() {
-    val startDestination = Screen.CreateDutchPay
+    val startDestination = Screen.Login
     val navBackStack = rememberNavBackStack(startDestination)
 
     Scaffold(

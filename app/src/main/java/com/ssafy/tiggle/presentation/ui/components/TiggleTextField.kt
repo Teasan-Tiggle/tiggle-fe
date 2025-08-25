@@ -45,7 +45,9 @@ fun TiggleTextField(
     keyboardType: KeyboardType = KeyboardType.Text,
     modifier: Modifier = Modifier,
     isError: Boolean = false,
-    errorMessage: String? = null
+    errorMessage: String? = null,
+    maxLines: Int = 1,
+    minLines: Int = 1
 ) {
     var isPasswordVisible by remember { mutableStateOf(false) }
 
@@ -95,7 +97,9 @@ fun TiggleTextField(
             keyboardOptions = KeyboardOptions(
                 keyboardType = keyboardType
             ),
-            singleLine = true,
+            singleLine = maxLines == 1,
+            maxLines = maxLines,
+            minLines = minLines,
             shape = RoundedCornerShape(8.dp),
             colors = OutlinedTextFieldDefaults.colors(
                 unfocusedBorderColor = if (isError) MaterialTheme.colorScheme.error else TiggleGrayLight,

@@ -2,7 +2,9 @@ package com.ssafy.tiggle.presentation.ui.dutchpay
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ssafy.tiggle.domain.usecase.GetAllUsersUseCase
+import com.ssafy.tiggle.domain.entity.dutchpay.DutchPayRequest
+import com.ssafy.tiggle.domain.usecase.dutchpay.GetAllUsersUseCase
+import com.ssafy.tiggle.domain.usecase.dutchpay.CreateDutchPayRequestUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,7 +16,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class CreateDutchPayViewModel @Inject constructor(
-    private val getAllUsersUseCase: GetAllUsersUseCase
+    private val getAllUsersUseCase: GetAllUsersUseCase,
+    private val createDutchPayRequestUseCase: CreateDutchPayRequestUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CreateDutchPayState())
@@ -50,14 +53,79 @@ class CreateDutchPayViewModel @Inject constructor(
         _uiState.update { it.copy(payMore = value) }
     }
 
+    fun updateTitle(text: String) {
+        _uiState.update { it.copy(title = text) }
+    }
+
+    fun updateMessage(text: String) {
+        _uiState.update { it.copy(message = text) }
+    }
+
     fun goNext() {
         _uiState.update { current ->
-            val next = when (current.step) {
-                CreateDutchPayStep.PICK_USERS -> CreateDutchPayStep.INPUT_AMOUNT
-                CreateDutchPayStep.INPUT_AMOUNT -> CreateDutchPayStep.COMPLETE
-                CreateDutchPayStep.COMPLETE -> CreateDutchPayStep.COMPLETE
+            when (current.step) {
+                CreateDutchPayStep.PICK_USERS -> {
+                    current.copy(step = CreateDutchPayStep.INPUT_AMOUNT)
+                }
+
+                CreateDutchPayStep.INPUT_AMOUNT -> {
+                    // 더치페이 요청 API 호출
+                    createDutchPayRequest()
+                    current
+                }
+
+                CreateDutchPayStep.COMPLETE -> current
             }
-            current.copy(step = next)
+        }
+    }
+
+    private fun createDutchPayRequest() {
+        val currentState = _uiState.value
+
+        // 입력값 검증
+        if (currentState.selectedUserIds.isEmpty() ||
+            currentState.amountText.isBlank() ||
+            currentState.title.isBlank()
+        ) {
+            _uiState.update { it.copy(errorMessage = "필수 입력값을 확인해주세요.") }
+            return
+        }
+
+        val totalAmount = currentState.amountText.toLongOrNull()
+        if (totalAmount == null || totalAmount <= 0) {
+            _uiState.update { it.copy(errorMessage = "올바른 금액을 입력해주세요.") }
+            return
+        }
+
+        _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+
+        viewModelScope.launch {
+            val request = DutchPayRequest(
+                userIds = currentState.selectedUserIds.toList(),
+                totalAmount = totalAmount,
+                title = currentState.title,
+                message = currentState.message,
+                payMore = currentState.payMore
+            )
+
+            createDutchPayRequestUseCase(request)
+                .onSuccess {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            step = CreateDutchPayStep.COMPLETE,
+                            errorMessage = null
+                        )
+                    }
+                }
+                .onFailure { exception ->
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = exception.message ?: "더치페이 요청에 실패했습니다."
+                        )
+                    }
+                }
         }
     }
 
@@ -70,5 +138,9 @@ class CreateDutchPayViewModel @Inject constructor(
             }
             current.copy(step = prev)
         }
+    }
+
+    fun clearErrorMessage() {
+        _uiState.update { it.copy(errorMessage = null) }
     }
 }

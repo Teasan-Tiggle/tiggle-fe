@@ -1,10 +1,9 @@
-package com.ssafy.tiggle.data.datasource.remote
+package com.ssafy.tiggle.core.network
 
 import android.util.Log
 import okhttp3.Interceptor
 import okhttp3.MediaType
 import okhttp3.Response
-import okhttp3.ResponseBody.Companion.toResponseBody
 import okio.Buffer
 import org.json.JSONArray
 import org.json.JSONObject
@@ -41,7 +40,7 @@ class PrettyHttpLoggingInterceptor : Interceptor {
         }
 
         if (requestBodyString != null) {
-            
+
             Log.v(TAG, "│  ${getPrettyJson(requestBodyString)}")
         }
         Log.i(TAG, "└─────────────────────────────────────────────────────────────────────────────")
@@ -69,14 +68,14 @@ class PrettyHttpLoggingInterceptor : Interceptor {
         val mediaType: MediaType? = responseBody?.contentType()
         val isTextBody = isTextLike(mediaType)
         var bodyString: String? = null
-        
+
         if (isTextBody && responseBody != null) {
             try {
                 // 안전한 방식으로 응답 본문 읽기
                 val source = responseBody.source()
                 source.request(Long.MAX_VALUE) // 전체 본문 요청
                 val buffer = source.buffer
-                
+
                 val charset = responseBody.contentType()?.charset(UTF8) ?: UTF8
                 bodyString = buffer.clone().readString(charset)
             } catch (e: Exception) {
@@ -143,7 +142,7 @@ class PrettyHttpLoggingInterceptor : Interceptor {
             } else {
                 jsonString
             }
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             jsonString // JSON 파싱 실패 시 원본 문자열 반환
         }
     }

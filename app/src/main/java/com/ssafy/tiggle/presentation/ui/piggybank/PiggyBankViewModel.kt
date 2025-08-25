@@ -9,8 +9,8 @@ import kotlinx.coroutines.flow.update
 class PiggyBankViewModel : ViewModel() {
     private val _uiState = MutableStateFlow(
         PiggyBankState(
-            hasPiggyBank = false,
-            hasLinkedAccount = false,
+            hasPiggyBank = true,
+            hasLinkedAccount = true,
             todaySaving = 847,
             lastWeekRemainder = 15847,
             lastWeekRounded = 15000,

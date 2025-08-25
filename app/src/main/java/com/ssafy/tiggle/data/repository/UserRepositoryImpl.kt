@@ -2,7 +2,7 @@ package com.ssafy.tiggle.data.repository
 
 import com.ssafy.tiggle.data.datasource.remote.UserApiService
 import com.ssafy.tiggle.domain.repository.UserRepository
-import com.ssafy.tiggle.domain.entity.UserSummary
+import com.ssafy.tiggle.domain.entity.dutchpay.UserSummary
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -15,7 +15,7 @@ import javax.inject.Singleton
 class UserRepositoryImpl @Inject constructor(
     private val userApiService: UserApiService
 ) : UserRepository {
-    
+
 
     override suspend fun getAllUsers(): Result<List<UserSummary>> {
         return try {

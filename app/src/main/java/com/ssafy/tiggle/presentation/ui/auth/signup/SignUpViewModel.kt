@@ -3,10 +3,10 @@ package com.ssafy.tiggle.presentation.ui.auth.signup
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ssafy.tiggle.domain.entity.ValidationField
-import com.ssafy.tiggle.domain.usecase.GetDepartmentsUseCase
-import com.ssafy.tiggle.domain.usecase.GetUniversitiesUseCase
-import com.ssafy.tiggle.domain.usecase.SignUpUserUseCase
+import com.ssafy.tiggle.domain.entity.auth.ValidationField
+import com.ssafy.tiggle.domain.usecase.auth.GetDepartmentsUseCase
+import com.ssafy.tiggle.domain.usecase.auth.GetUniversitiesUseCase
+import com.ssafy.tiggle.domain.usecase.auth.SignUpUserUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -85,7 +85,7 @@ class SignUpViewModel @Inject constructor(
         val currentData = _uiState.value.userData
         val newData = currentData.copy(universityId = school).validateField(ValidationField.SCHOOL)
         _uiState.value = _uiState.value.copy(userData = newData)
-        
+
         // 학교가 변경되면 해당 학교의 학과 목록을 불러옴
         if (school.isNotBlank()) {
             loadDepartments(school.toLongOrNull() ?: return)
@@ -235,7 +235,7 @@ class SignUpViewModel @Inject constructor(
     fun loadUniversities() {
         Log.d("SignUpViewModel", "🏫 대학교 목록 로드 시작")
         _uiState.value = _uiState.value.copy(isUniversitiesLoading = true)
-        
+
         viewModelScope.launch {
             getUniversitiesUseCase()
                 .onSuccess { universities ->
@@ -259,7 +259,7 @@ class SignUpViewModel @Inject constructor(
     private fun loadDepartments(universityId: Long) {
         Log.d("SignUpViewModel", "🎓 학과 목록 로드 시작 (대학교 ID: $universityId)")
         _uiState.value = _uiState.value.copy(isDepartmentsLoading = true)
-        
+
         viewModelScope.launch {
             getDepartmentsUseCase(universityId)
                 .onSuccess { departments ->

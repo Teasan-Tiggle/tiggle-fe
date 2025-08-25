@@ -21,7 +21,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.ssafy.tiggle.domain.entity.UserSignUp
+import com.ssafy.tiggle.domain.entity.auth.UserSignUp
+import com.ssafy.tiggle.domain.entity.auth.Department
+import com.ssafy.tiggle.domain.entity.auth.University
 import com.ssafy.tiggle.presentation.ui.components.TiggleAllAgreeCheckboxItem
 import com.ssafy.tiggle.presentation.ui.components.TiggleButton
 import com.ssafy.tiggle.presentation.ui.components.TiggleButtonVariant
@@ -431,10 +433,12 @@ private fun SchoolInformationScreen(
     // 드롭다운에 표시할 학교/학과 이름 목록
     val schoolNames = uiState.universities.map { it.name }
     val departmentNames = uiState.departments.map { it.name }
-    
+
     // 현재 선택된 학교/학과 이름
-    val selectedSchoolName = uiState.universities.find { "${it.id}" == uiState.userData.universityId }?.name ?: ""
-    val selectedDepartmentName = uiState.departments.find { "${it.id}" == uiState.userData.departmentId }?.name ?: ""
+    val selectedSchoolName =
+        uiState.universities.find { "${it.id}" == uiState.userData.universityId }?.name ?: ""
+    val selectedDepartmentName =
+        uiState.departments.find { "${it.id}" == uiState.userData.departmentId }?.name ?: ""
 
     TiggleScreenLayout(
         showBackButton = true,
@@ -718,12 +722,12 @@ private fun SignUpSchoolScreenPreview() {
             universityId = "1"
         ),
         universities = listOf(
-            com.ssafy.tiggle.domain.entity.University(1, "SSAFY"),
-            com.ssafy.tiggle.domain.entity.University(2, "서울대학교")
+            University(1, "SSAFY"),
+            University(2, "서울대학교")
         ),
         departments = listOf(
-            com.ssafy.tiggle.domain.entity.Department(1, "컴퓨터공학과"),
-            com.ssafy.tiggle.domain.entity.Department(2, "소프트웨어학과")
+            Department(1, "컴퓨터공학과"),
+            Department(2, "소프트웨어학과")
         )
     )
 
@@ -756,8 +760,8 @@ private fun SignUpLoadingScreenPreview() {
             universityId = "1"
         ),
         universities = listOf(
-            com.ssafy.tiggle.domain.entity.University(1, "SSAFY"),
-            com.ssafy.tiggle.domain.entity.University(2, "서울대학교")
+            University(1, "SSAFY"),
+            University(2, "서울대학교")
         ),
         isUniversitiesLoading = true
     )
