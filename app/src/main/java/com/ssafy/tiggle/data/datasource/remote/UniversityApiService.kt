@@ -1,8 +1,8 @@
 package com.ssafy.tiggle.data.datasource.remote
 
 import com.ssafy.tiggle.data.model.BaseResponse
-import com.ssafy.tiggle.data.model.DepartmentDto
-import com.ssafy.tiggle.data.model.UniversityDto
+import com.ssafy.tiggle.data.model.auth.response.DepartmentDto
+import com.ssafy.tiggle.data.model.auth.response.UniversityDto
 import retrofit2.Response
 import retrofit2.http.GET
 import retrofit2.http.Path

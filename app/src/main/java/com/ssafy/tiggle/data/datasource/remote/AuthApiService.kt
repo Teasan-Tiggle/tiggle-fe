@@ -1,8 +1,8 @@
 package com.ssafy.tiggle.data.datasource.remote
 
 import com.ssafy.tiggle.data.model.BaseResponse
-import com.ssafy.tiggle.data.model.LoginRequestDto
-import com.ssafy.tiggle.data.model.SignUpRequestDto
+import com.ssafy.tiggle.data.model.auth.request.LoginRequestDto
+import com.ssafy.tiggle.data.model.auth.request.SignUpRequestDto
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.POST

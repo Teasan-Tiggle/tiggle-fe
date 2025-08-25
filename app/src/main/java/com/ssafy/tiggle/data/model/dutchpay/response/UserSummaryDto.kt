@@ -1,4 +1,4 @@
-package com.ssafy.tiggle.data.model
+package com.ssafy.tiggle.data.model.dutchpay.response
 
 import com.ssafy.tiggle.domain.entity.dutchpay.UserSummary
 
@@ -14,5 +14,3 @@ data class UserSummaryDto(
         name = name
     )
 }
-
-

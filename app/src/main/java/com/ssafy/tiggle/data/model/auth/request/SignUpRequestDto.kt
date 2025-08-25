@@ -1,4 +1,4 @@
-package com.ssafy.tiggle.data.model
+package com.ssafy.tiggle.data.model.auth.request
 
 /**
  * 회원가입 요청 DTO

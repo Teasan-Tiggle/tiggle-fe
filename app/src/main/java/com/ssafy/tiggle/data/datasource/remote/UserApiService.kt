@@ -1,7 +1,7 @@
 package com.ssafy.tiggle.data.datasource.remote
 
 import com.ssafy.tiggle.data.model.BaseResponse
-import com.ssafy.tiggle.data.model.UserSummaryDto
+import com.ssafy.tiggle.data.model.dutchpay.response.UserSummaryDto
 import retrofit2.Response
 import retrofit2.http.GET
 
