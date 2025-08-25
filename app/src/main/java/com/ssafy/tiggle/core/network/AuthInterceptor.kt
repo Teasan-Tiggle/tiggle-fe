@@ -1,7 +1,7 @@
-package com.ssafy.tiggle.data.datasource.remote
+package com.ssafy.tiggle.core.network
 
-import android.util.Log
 import com.ssafy.tiggle.data.datasource.local.AuthDataSource
+import com.ssafy.tiggle.data.datasource.remote.AuthApiService
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -24,7 +24,7 @@ class AuthInterceptor @Inject constructor(
     private fun stripBearer(raw: String?): String =
         raw?.replaceFirst(Regex("^Bearer\\s+", RegexOption.IGNORE_CASE), "")?.trim().orEmpty()
 
-    private fun isAuthPath(url: HttpUrl) = url.encodedPath.startsWith("/auth/")
+    private fun isAuthPath(url: HttpUrl) = url.encodedPath.startsWith("/api/auth/")
 
     override fun intercept(chain: Interceptor.Chain): Response {
         val original = chain.request()
@@ -42,8 +42,8 @@ class AuthInterceptor @Inject constructor(
             }
             .build()
 
-        var res = chain.proceed(req)
-        if (res.code != 401) return res
+        val res = chain.proceed(req)
+        if (res.code != 401 && res.code != 403) return res
 
         // 2) 401 → 재발급 (단일 실행)
         val refreshed = runBlocking {
@@ -51,15 +51,10 @@ class AuthInterceptor @Inject constructor(
                 val latest = stripBearer(authDataSource.getAccessToken())
                 if (latest.isNotBlank() && latest != access) return@withLock true
 
-                val refresh = stripBearer(authDataSource.getRefreshToken())
-                if (refresh.isBlank()) return@withLock false
-
-                val cookieHeader = authDataSource.buildCookieHeaderForReissue(refresh)
-                Log.d("Reissue", "➡️ Cookie header(for reissue)=${cookieHeader}")
-
-                val r = api.reissueTokenByCookie(cookie = cookieHeader)
+                // CookieJar가 자동으로 refreshToken/JSESSIONID를 쿠키로 전송함
+                val r = api.reissueTokenByCookie()
                 if (!r.isSuccessful) {
-                    if (r.code() == 401) {
+                    if (r.code() == 401 || r.code() == 403) {
                         // INVALID_REFRESH_TOKEN 등: 회복 불가 → 세션 정리
                         authDataSource.clearAuthData()
                     }
@@ -67,14 +62,8 @@ class AuthInterceptor @Inject constructor(
                 }
 
                 val newAccess = stripBearer(r.headers()["Authorization"])
-                val setCookies = r.headers().values("Set-Cookie")
-                authDataSource.saveSetCookies(setCookies)
-
-                val cookieRefresh = setCookies.firstOrNull { it.startsWith("refreshToken=") }
-                    ?.substringAfter("refreshToken=")?.substringBefore(";")
-
-                if (newAccess.isBlank() || cookieRefresh.isNullOrBlank()) return@withLock false
-                authDataSource.saveTokens(newAccess, cookieRefresh)
+                if (newAccess.isBlank()) return@withLock false
+                authDataSource.saveAccessToken(newAccess)
                 true
             }
         }
@@ -94,4 +83,3 @@ class AuthInterceptor @Inject constructor(
         return chain.proceed(retry)
     }
 }
-

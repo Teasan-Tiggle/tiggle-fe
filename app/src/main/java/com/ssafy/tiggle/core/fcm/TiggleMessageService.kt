@@ -83,7 +83,10 @@ class TiggleMessagingService : FirebaseMessagingService() {
             ?: message.notification?.body
             ?: "새 알림이 도착했어요."
 
-        Log.d(TAG, "onMessageReceived: data=${message.data}, notif=${message.notification}")
+        val deepLink = message.data["link"]
+
+        Log.d(TAG, "onMessageReceived: data=${message.data}, notif=${message.notification}, " +
+                "title=$title, body=$body, link=$deepLink")
 
         // Android 13+ 권한 체크
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&

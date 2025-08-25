@@ -1,4 +1,4 @@
-package com.ssafy.tiggle.domain.entity
+package com.ssafy.tiggle.domain.entity.auth
 
 import android.util.Patterns
 

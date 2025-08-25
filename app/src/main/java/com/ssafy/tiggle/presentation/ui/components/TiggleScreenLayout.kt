@@ -98,7 +98,7 @@ private fun TiggleScreenLayoutPreview() {
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold
             )
-            
+            23
             Spacer(modifier = Modifier.height(16.dp))
             
             Text(
