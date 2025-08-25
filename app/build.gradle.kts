@@ -81,6 +81,7 @@ dependencies {
     implementation(libs.retrofit.gson.converter)
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging.interceptor)
+    implementation(libs.okhttp.urlconnection)
 
     // Coroutines
     implementation(libs.kotlinx.coroutines.android)

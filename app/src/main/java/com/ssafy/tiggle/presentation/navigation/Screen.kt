@@ -32,4 +32,7 @@ sealed interface Screen : NavKey {
 
     @Serializable
     object RegisterAccount : Screen
+
+    @Serializable
+    object CreateDutchPay : Screen
 }

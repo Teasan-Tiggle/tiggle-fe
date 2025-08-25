@@ -4,8 +4,8 @@ import android.util.Log
 import com.google.gson.Gson
 import com.ssafy.tiggle.data.datasource.remote.UniversityApiService
 import com.ssafy.tiggle.data.model.BaseResponse
-import com.ssafy.tiggle.domain.entity.Department
-import com.ssafy.tiggle.domain.entity.University
+import com.ssafy.tiggle.domain.entity.auth.Department
+import com.ssafy.tiggle.domain.entity.auth.University
 import com.ssafy.tiggle.domain.repository.UniversityRepository
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -25,7 +25,10 @@ class UniversityRepositoryImpl @Inject constructor(
         return try {
             Log.d("UniversityRepositoryImpl", "📤 대학교 목록 요청 전송 중...")
             val response = universityApiService.getUniversities()
-            Log.d("UniversityRepositoryImpl", "📥 대학교 목록 응답 수신: isSuccessful=${response.isSuccessful}, code=${response.code()}")
+            Log.d(
+                "UniversityRepositoryImpl",
+                "📥 대학교 목록 응답 수신: isSuccessful=${response.isSuccessful}, code=${response.code()}"
+            )
 
             if (response.isSuccessful) {
                 val body = response.body()
@@ -39,7 +42,10 @@ class UniversityRepositoryImpl @Inject constructor(
                     Result.failure(Exception(body?.message ?: "대학교 목록을 불러올 수 없습니다."))
                 }
             } else {
-                Log.d("UniversityRepositoryImpl", "❌ HTTP 실패: ${response.code()} ${response.message()}")
+                Log.d(
+                    "UniversityRepositoryImpl",
+                    "❌ HTTP 실패: ${response.code()} ${response.message()}"
+                )
                 val errorBody = response.errorBody()?.string()
                 val message = when (response.code()) {
                     400 -> "잘못된 요청입니다."
@@ -51,7 +57,8 @@ class UniversityRepositoryImpl @Inject constructor(
                     else -> {
                         if (!errorBody.isNullOrEmpty()) {
                             try {
-                                val errorResponse = Gson().fromJson(errorBody, BaseResponse::class.java)
+                                val errorResponse =
+                                    Gson().fromJson(errorBody, BaseResponse::class.java)
                                 errorResponse.message ?: "대학교 목록을 불러올 수 없습니다. (${response.code()})"
                             } catch (e: Exception) {
                                 "대학교 목록을 불러올 수 없습니다. (${response.code()})"
@@ -74,7 +81,10 @@ class UniversityRepositoryImpl @Inject constructor(
         return try {
             Log.d("UniversityRepositoryImpl", "📤 학과 목록 요청 전송 중...")
             val response = universityApiService.getDepartments(universityId)
-            Log.d("UniversityRepositoryImpl", "📥 학과 목록 응답 수신: isSuccessful=${response.isSuccessful}, code=${response.code()}")
+            Log.d(
+                "UniversityRepositoryImpl",
+                "📥 학과 목록 응답 수신: isSuccessful=${response.isSuccessful}, code=${response.code()}"
+            )
 
             if (response.isSuccessful) {
                 val body = response.body()
@@ -88,7 +98,10 @@ class UniversityRepositoryImpl @Inject constructor(
                     Result.failure(Exception(body?.message ?: "학과 목록을 불러올 수 없습니다."))
                 }
             } else {
-                Log.d("UniversityRepositoryImpl", "❌ HTTP 실패: ${response.code()} ${response.message()}")
+                Log.d(
+                    "UniversityRepositoryImpl",
+                    "❌ HTTP 실패: ${response.code()} ${response.message()}"
+                )
                 val errorBody = response.errorBody()?.string()
                 val message = when (response.code()) {
                     400 -> "잘못된 요청입니다."
@@ -100,7 +113,8 @@ class UniversityRepositoryImpl @Inject constructor(
                     else -> {
                         if (!errorBody.isNullOrEmpty()) {
                             try {
-                                val errorResponse = Gson().fromJson(errorBody, BaseResponse::class.java)
+                                val errorResponse =
+                                    Gson().fromJson(errorBody, BaseResponse::class.java)
                                 errorResponse.message ?: "학과 목록을 불러올 수 없습니다. (${response.code()})"
                             } catch (e: Exception) {
                                 "학과 목록을 불러올 수 없습니다. (${response.code()})"

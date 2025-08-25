@@ -5,7 +5,6 @@ import com.ssafy.tiggle.data.model.LoginRequestDto
 import com.ssafy.tiggle.data.model.SignUpRequestDto
 import retrofit2.Response
 import retrofit2.http.Body
-import retrofit2.http.Header
 import retrofit2.http.POST
 
 /**
@@ -37,9 +36,7 @@ interface AuthApiService {
     ): Response<BaseResponse<Unit>>
 
     @POST("auth/reissue")
-    suspend fun reissueTokenByCookie(
-        @Header("Cookie") cookie: String
-    ): Response<BaseResponse<Unit>>
+    suspend fun reissueTokenByCookie(): Response<BaseResponse<Unit>>
 
 
 }

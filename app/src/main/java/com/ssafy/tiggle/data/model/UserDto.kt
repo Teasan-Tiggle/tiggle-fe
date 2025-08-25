@@ -1,10 +1,10 @@
 package com.ssafy.tiggle.data.model
 
-import com.ssafy.tiggle.domain.entity.User
+import com.ssafy.tiggle.domain.entity.auth.User
 
 /**
  * 사용자 DTO (Data Transfer Object)
- * 
+ *
  * API 응답으로 받는 사용자 데이터 구조
  */
 data class UserDto(

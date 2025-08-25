@@ -1,10 +1,10 @@
 package com.ssafy.tiggle.data.model
 
-import com.ssafy.tiggle.domain.entity.University
+import com.ssafy.tiggle.domain.entity.auth.University
 
 /**
  * 대학교 DTO (Data Transfer Object)
- * 
+ *
  * API 응답으로 받는 대학교 데이터 구조
  */
 data class UniversityDto(

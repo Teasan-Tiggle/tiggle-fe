@@ -17,14 +17,12 @@ class AuthDataSource @Inject constructor(
      * - 앱 종료 후에도 유지되는 데이터로, 앱 재시작 시 자동 로그인 기능에 사용
      */
 
-    // SharedPreferences에 저장된 인증 토큰을 관리
-    fun saveTokens(accessToken: String, refreshToken: String) {
+    // SharedPreferences에 저장된 access 토큰을 관리
+    fun saveAccessToken(accessToken: String) {
         prefs.edit {
             putString(KEY_ACCESS_TOKEN, accessToken)
-            putString(KEY_REFRESH_TOKEN, refreshToken)
         }
         Log.d("AuthLocalDataSource", "✅ accessToken 저장됨: $accessToken")
-        Log.d("AuthLocalDataSource", "✅ refreshToken 저장됨: $refreshToken")
     }
 
     // 토큰을 가져오는 메소드
@@ -32,10 +30,7 @@ class AuthDataSource @Inject constructor(
         return prefs.getString(KEY_ACCESS_TOKEN, null)
     }
 
-    // 리프레시 토큰을 가져오는 메소드
-    fun getRefreshToken(): String? {
-        return prefs.getString(KEY_REFRESH_TOKEN, null)
-    }
+    // refresh 토큰은 쿠키로만 관리됨
 
     /**
      * 쿠키 관리 클래스
@@ -43,27 +38,13 @@ class AuthDataSource @Inject constructor(
      * - 재발급 시 필요한 Cookie 헤더 문자열을 구성
      */
 
-    // ▼ 모든 Set-Cookie 저장
-    fun saveSetCookies(cookies: List<String>) {
-        prefs.edit { putStringSet(KEY_SET_COOKIES, cookies.toSet()) }
-    }
-
-    // ▼ 재발급용 Cookie 헤더 조립 (JSESSIONID 등 + refreshToken)
-    fun buildCookieHeaderForReissue(refreshToken: String): String {
-        val raw = prefs.getStringSet(KEY_SET_COOKIES, emptySet())!!.toList()
-        val pairs = raw.map { it.substringBefore(";") } // name=value
-        return (pairs + "refreshToken=$refreshToken")
-            .distinctBy { it.substringBefore("=") }
-            .joinToString("; ")
-    }
+    // 쿠키는 CookieJar가 관리하므로 앱 로컬 저장 불필요
 
 
     // 인증 데이터를 모두 지우는 메소드
     fun clearAuthData() {
         prefs.edit {
             remove(KEY_ACCESS_TOKEN)
-            remove(KEY_REFRESH_TOKEN)
-            remove(KEY_SET_COOKIES)
         }
     }
 
@@ -75,7 +56,5 @@ class AuthDataSource @Inject constructor(
 
     companion object {
         private const val KEY_ACCESS_TOKEN = "access_token"
-        private const val KEY_REFRESH_TOKEN = "refresh_token"
-        private const val KEY_SET_COOKIES = "set_cookies" // 쿠키 저장 키
     }
 }

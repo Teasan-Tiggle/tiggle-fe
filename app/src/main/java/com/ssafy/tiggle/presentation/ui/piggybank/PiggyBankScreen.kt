@@ -22,8 +22,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -45,7 +43,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ssafy.tiggle.R
+import com.ssafy.tiggle.core.utils.Formatter
 import com.ssafy.tiggle.presentation.ui.components.TiggleScreenLayout
+import com.ssafy.tiggle.presentation.ui.components.TiggleSwitchRow
 import com.ssafy.tiggle.presentation.ui.theme.AppTypography
 import com.ssafy.tiggle.presentation.ui.theme.TiggleBlue
 import com.ssafy.tiggle.presentation.ui.theme.TiggleGray
@@ -57,6 +57,7 @@ fun PiggyBankScreen(
     modifier: Modifier = Modifier,
     onOpenAccountClick: () -> Unit = {},
     onRegisterAccountClick: () -> Unit = {},
+    onStartDutchPayClick: () -> Unit = {},
     onBackClick: () -> Unit = {},
     viewModel: PiggyBankViewModel = hiltViewModel()
 ) {
@@ -116,13 +117,13 @@ fun PiggyBankScreen(
             if (uiState.hasPiggyBank) {
                 DutchButtonsRow(
                     onStatus = {},
-                    onStart = {}
+                    onStart = onStartDutchPayClick
                 )
             }
             Spacer(Modifier.height(25.dp))
 
             // 스위치 섹션
-            SettingSwitchRow(
+            TiggleSwitchRow(
                 title = "저금통 자동 기부",
                 subtitle = "일정 금액의 티끌이 쌓이면 기부 단체에 자동으로 기부됩니다.",
                 checked = uiState.piggyBank.autoDonation,
@@ -136,7 +137,7 @@ fun PiggyBankScreen(
             )
 
             // 스위치 섹션 2
-            SettingSwitchRow(
+            TiggleSwitchRow(
                 title = "잔돈 자동 저금",
                 subtitle = "매일 자정에 1,000원 미만 잔돈을 자동으로 저금합니다.",
                 checked = uiState.piggyBank.autoSaving,
@@ -205,42 +206,7 @@ private fun DottedActionCard(
     }
 }
 
-@Composable
-private fun SettingSwitchRow(
-    title: String,
-    subtitle: String,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 10.dp, vertical = 19.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(title, color = Color.Black, fontSize = 15.sp, style = AppTypography.bodyLarge)
-            Spacer(Modifier.height(4.dp))
-            Text(
-                subtitle,
-                color = TiggleGrayText,
-                fontSize = 10.sp,
-                style = AppTypography.bodySmall
-            )
-        }
-        Switch(
-            checked = checked,
-            onCheckedChange = onCheckedChange,
-            colors = SwitchDefaults.colors(
-                checkedThumbColor = Color.White,
-                checkedTrackColor = TiggleBlue,
-                uncheckedThumbColor = Color.White,
-                uncheckedTrackColor = TiggleGray
-            ),
-            modifier = Modifier.size(10.dp, 5.dp)
-        )
-    }
-}
+// moved: replaced by TiggleSwitchRow in components
 
 /** 점선 둥근 사각 보더 */
 private fun Modifier.drawDottedRoundRect(cornerRadius: Dp) = this.then(
@@ -317,8 +283,8 @@ private fun TodaySavingBanner(uiState: PiggyBankState) {
                 Spacer(Modifier.height(10.dp))
                 Text(
                     "+ 지난주에 ${
-                        uiState.piggyBankAccount.lastWeekSavedAmount.toInt().toMoney()
-                    }원이 저금 됐어요",
+                        Formatter.formatCurrency(uiState.piggyBankAccount.lastWeekSavedAmount)
+                    }이 저금 됐어요",
                     color = Color(0xE6FFFFFF),
                     style = AppTypography.bodySmall
                 )
@@ -427,7 +393,6 @@ private fun DutchButtonsRow(onStatus: () -> Unit, onStart: () -> Unit) {
     }
 }
 
-private fun Int.toMoney(): String = "%,d".format(this)
 
 @Preview
 @Composable
