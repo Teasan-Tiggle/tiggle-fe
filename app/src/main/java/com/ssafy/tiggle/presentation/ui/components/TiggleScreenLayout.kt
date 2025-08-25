@@ -3,6 +3,7 @@ package com.ssafy.tiggle.presentation.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -28,6 +29,7 @@ fun TiggleScreenLayout(
     onBackClick: () -> Unit = {},
     showLogo: Boolean = false,
     bottomButton: @Composable (() -> Unit)? = null,
+    contentPadding: PaddingValues = PaddingValues(horizontal = 32.dp),
     content: @Composable () -> Unit
 ) {
     Box(
@@ -58,7 +60,7 @@ fun TiggleScreenLayout(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .padding(horizontal = 32.dp)
+                    .padding(contentPadding)
             ) {
                 content()
             }

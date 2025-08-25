@@ -12,6 +12,7 @@ import com.ssafy.tiggle.data.model.piggybank.response.VerifySMSResponseDto
 import com.ssafy.tiggle.data.model.piggybank.response.toDomain
 import com.ssafy.tiggle.domain.entity.piggybank.AccountHolder
 import com.ssafy.tiggle.domain.entity.piggybank.MainAccount
+import com.ssafy.tiggle.domain.entity.piggybank.MainAccountDetail
 import com.ssafy.tiggle.domain.entity.piggybank.PiggyBank
 import com.ssafy.tiggle.domain.entity.piggybank.PiggyBankAccount
 import com.ssafy.tiggle.domain.repository.PiggyBankRepository
@@ -218,6 +219,29 @@ class PiggyBankRepositoryImpl @Inject constructor(
                 Result.success(response.data.toDomain())
             } else {
                 Result.failure(Exception(response.message ?: "카테고리 설정에 실패했습니다."))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getTransactions(
+        accountNo: String,
+        cursor: String?
+    ): Result<MainAccountDetail> {
+        return try {
+            // size, sort 기본값은 스웨거 기본(20, DESC)에 맞춤
+            val response = piggyBankApiService.getTransactions(
+                accountNo = accountNo,
+                cursor = cursor,
+                size = 20,
+                sort = "DESC"
+            )
+
+            if (response.result && response.data != null) {
+                Result.success(response.data.toDomain())
+            } else {
+                Result.failure(Exception(response.message ?: "거래내역 조회에 실패했습니다."))
             }
         } catch (e: Exception) {
             Result.failure(e)

@@ -3,6 +3,7 @@ package com.ssafy.tiggle.domain.repository
 import com.ssafy.tiggle.data.model.piggybank.response.VerifySMSResponseDto
 import com.ssafy.tiggle.domain.entity.piggybank.AccountHolder
 import com.ssafy.tiggle.domain.entity.piggybank.MainAccount
+import com.ssafy.tiggle.domain.entity.piggybank.MainAccountDetail
 import com.ssafy.tiggle.domain.entity.piggybank.PiggyBank
 import com.ssafy.tiggle.domain.entity.piggybank.PiggyBankAccount
 
@@ -34,4 +35,8 @@ interface PiggyBankRepository {
     ): Result<PiggyBank>
 
     suspend fun setEsgCategory(categoryId: Int): Result<PiggyBank>
+    suspend fun getTransactions(
+        accountNo: String,
+        cursor: String? = null
+    ): Result<MainAccountDetail>
 }

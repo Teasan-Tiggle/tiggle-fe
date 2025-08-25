@@ -35,4 +35,7 @@ sealed interface Screen : NavKey {
 
     @Serializable
     object CreateDutchPay : Screen
+
+    @Serializable
+    data class MainAccountDetail(val accountNo: String) : Screen
 }

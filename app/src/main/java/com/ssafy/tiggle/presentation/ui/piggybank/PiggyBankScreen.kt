@@ -16,8 +16,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -59,6 +61,7 @@ fun PiggyBankScreen(
     onRegisterAccountClick: () -> Unit = {},
     onStartDutchPayClick: () -> Unit = {},
     onBackClick: () -> Unit = {},
+    onAccountClick: (String) -> Unit = {},
     viewModel: PiggyBankViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -86,83 +89,94 @@ fun PiggyBankScreen(
                 fontSize = 13.sp,
                 style = AppTypography.bodySmall
             )
-            Spacer(Modifier.height(50.dp))
 
-            //계좌 존재 여부에 따라
-            if (uiState.hasPiggyBank) {
-                TodaySavingBanner(
-                    uiState = uiState
+            val scrollState = rememberScrollState()
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .verticalScroll(scrollState)
+            ) {
+                Spacer(Modifier.height(50.dp))
+
+                if (uiState.hasPiggyBank) {
+                    TodaySavingBanner(uiState = uiState)
+                } else {
+                    DottedActionCard(
+                        title = "티끌 저금통 개설",
+                        desc = "계좌를 개설해\n티끌 저금통을 채워보세요!",
+                        onClick = onOpenAccountClick
+                    )
+                }
+
+                Spacer(Modifier.height(10.dp))
+
+                if (uiState.hasLinkedAccount) {
+                    AccountCard(uiState = uiState, onClick = { accountNo ->
+                        onAccountClick(accountNo)
+                    })
+                } else {
+                    DottedActionCard(
+                        title = "내 계좌 등록",
+                        desc = "나의 계좌를 등록하면\n티끌 저금통에 잔돈이 자동으로 기부됩니다.",
+                        onClick = onRegisterAccountClick
+                    )
+                }
+
+                Spacer(Modifier.height(16.dp))
+
+                if (uiState.hasPiggyBank) {
+                    DutchButtonsRow(
+                        onStatus = {},
+                        onStart = onStartDutchPayClick
+                    )
+                }
+
+                Spacer(Modifier.height(20.dp))
+
+                TiggleSwitchRow(
+                    title = "저금통 자동 기부",
+                    subtitle = "일정 금액의 티끌이 쌓이면 \n기부 단체에 자동으로 기부됩니다.",
+                    checked = uiState.piggyBank.autoDonation,
+                    onCheckedChange = viewModel::onToggleAutoDonation
                 )
-            } else {
-                DottedActionCard(
-                    title = "티끌 저금통 개설",
-                    desc = "계좌를 개설해\n티끌 저금통을 채워보세요!",
-                    onClick = onOpenAccountClick
+
+                HorizontalDivider(
+                    color = TiggleGray,
+                    thickness = 0.5.dp,
+                    modifier = Modifier.padding(10.dp)
                 )
+
+                TiggleSwitchRow(
+                    title = "잔돈 자동 저금",
+                    subtitle = "매일 자정에 1,000원 미만 잔돈을 자동으로 저금합니다.",
+                    checked = uiState.piggyBank.autoSaving,
+                    onCheckedChange = viewModel::onToggleAutoSaving
+                )
+
+                HorizontalDivider(
+                    color = TiggleGray,
+                    thickness = 0.5.dp,
+                    modifier = Modifier.padding(10.dp)
+                )
+
+                Spacer(Modifier.height(24.dp))
             }
-            Spacer(Modifier.height(10.dp))
-            if (uiState.hasLinkedAccount) {
-                AccountCard(
-                    uiState = uiState
-                )
-            } else {
-                DottedActionCard(
-                    title = "내 계좌 등록",
-                    desc = "나의 계좌를 등록하면\n티끌 저금통에 잔돈이 자동으로 기부됩니다.",
-                    onClick = onRegisterAccountClick
-                )
-            }
-            Spacer(Modifier.height(16.dp))
+            // ⬆️ 스크롤 끝
 
-            if (uiState.hasPiggyBank) {
-                DutchButtonsRow(
-                    onStatus = {},
-                    onStart = onStartDutchPayClick
-                )
-            }
-            Spacer(Modifier.height(25.dp))
-
-            // 스위치 섹션
-            TiggleSwitchRow(
-                title = "저금통 자동 기부",
-                subtitle = "일정 금액의 티끌이 쌓이면 기부 단체에 자동으로 기부됩니다.",
-                checked = uiState.piggyBank.autoDonation,
-                onCheckedChange = viewModel::onToggleAutoDonation
-            )
-
-            HorizontalDivider(
-                color = TiggleGray,
-                thickness = 0.5.dp,
-                modifier = Modifier.padding(10.dp)
-            )
-
-            // 스위치 섹션 2
-            TiggleSwitchRow(
-                title = "잔돈 자동 저금",
-                subtitle = "매일 자정에 1,000원 미만 잔돈을 자동으로 저금합니다.",
-                checked = uiState.piggyBank.autoSaving,
-                onCheckedChange = viewModel::onToggleAutoSaving
-            )
-
+            // BottomSheet는 스크롤 영역 밖에 두는 게 자연스러움 (오버레이로 뜨니까)
             if (uiState.showEsgCategorySheet) {
-                EsgCategoryBottomSheet(   // <- 네가 만든 컴포넌트 이름
+                EsgCategoryBottomSheet(
                     show = uiState.showEsgCategorySheet,
                     selectedId = uiState.piggyBank.esgCategory?.id,
-                    onPick = viewModel::onPickEsgCategory,   // 카테고리 탭
-                    onConfirm = viewModel::onConfirmAutoDonation, // 확인 버튼
-                    onDismiss = viewModel::onDismissEsgSheet   // 바깥 터치/뒤로
+                    onPick = viewModel::onPickEsgCategory,
+                    onConfirm = viewModel::onConfirmAutoDonation,
+                    onDismiss = viewModel::onDismissEsgSheet
                 )
             }
-            HorizontalDivider(
-                color = TiggleGray,
-                thickness = 0.5.dp,
-                modifier = Modifier.padding(10.dp)
-            )
-
-            Spacer(Modifier.height(24.dp))
         }
     }
 }
+
 
 @Composable
 private fun DottedActionCard(
@@ -305,7 +319,7 @@ private fun TodaySavingBanner(uiState: PiggyBankState) {
 }
 
 @Composable
-private fun AccountCard(uiState: PiggyBankState) {
+private fun AccountCard(uiState: PiggyBankState, onClick: (String) -> Unit) {
     val radius = 14.dp
     Column(
         modifier = Modifier
@@ -315,6 +329,7 @@ private fun AccountCard(uiState: PiggyBankState) {
             .background(Color.White)
             .border(1.dp, Color(0x11000000), RoundedCornerShape(radius))
             .padding(16.dp)
+            .clickable { onClick(uiState.mainAccount.accountNo) }
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(

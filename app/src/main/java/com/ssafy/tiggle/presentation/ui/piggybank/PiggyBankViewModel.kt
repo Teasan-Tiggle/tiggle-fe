@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
+import java.text.DecimalFormat
 import javax.inject.Inject
 
 @HiltViewModel
@@ -251,4 +252,35 @@ class PiggyBankViewModel @Inject constructor(
         }
     }
 
+    fun loadTransactions(accountNo: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+
+            useCases.getMainAccountDetailUseCase(accountNo, null)
+                .onSuccess { detail ->
+                    _uiState.update { it.copy(mainAccountDetail = detail, isLoading = false) }
+                }
+                .onFailure { e ->
+                    _uiState.update { it.copy(errorMessage = e.message, isLoading = false) }
+                }
+        }
+    }
+
+}
+
+fun formatAmount(amount: Int): String {
+    val df = DecimalFormat("#,###")
+    return df.format(amount)
+}
+
+/** "YYYY-MM-DD" → "M.D" 로 포맷 (예: "2025-08-20" → "8.20") */
+fun formatMonthDay(date: String): String {
+    // date가 "YYYY-MM-DD" 라고 가정
+    return try {
+        val mm = date.substring(5, 7).trimStart('0')
+        val dd = date.substring(8, 10).trimStart('0')
+        "$mm.$dd"
+    } catch (_: Exception) {
+        date // 실패 시 원문 출력
+    }
 }

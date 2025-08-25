@@ -11,6 +11,7 @@ import com.ssafy.tiggle.data.model.piggybank.request.VerificationRequestDto
 import com.ssafy.tiggle.data.model.piggybank.request.VerifySMSRequestDto
 import com.ssafy.tiggle.data.model.piggybank.response.AccountHolderResponseDto
 import com.ssafy.tiggle.data.model.piggybank.response.CreatePiggyBankResponseDto
+import com.ssafy.tiggle.data.model.piggybank.response.MainAccountDetailResponseDto
 import com.ssafy.tiggle.data.model.piggybank.response.MainAccountResponseDto
 import com.ssafy.tiggle.data.model.piggybank.response.PiggyBankAccountResponseDto
 import com.ssafy.tiggle.data.model.piggybank.response.PiggyBankSettingResponseDto
@@ -76,4 +77,12 @@ interface PiggyBankApiService {
     suspend fun setEsgCategory(
         @Path("categoryId") categoryId: Int
     ): BaseResponse<PiggyBankSettingResponseDto>
+
+    @GET("accounts/transactions")
+    suspend fun getTransactions(
+        @Query("accountNo") accountNo: String,
+        @Query("cursor") cursor: String? = null,
+        @Query("size") size: Int = 20,
+        @Query("sort") sort: String = "DESC"
+    ): BaseResponse<MainAccountDetailResponseDto>
 }

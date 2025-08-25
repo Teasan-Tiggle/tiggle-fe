@@ -15,6 +15,7 @@ import androidx.navigation3.ui.rememberSceneSetupNavEntryDecorator
 import com.ssafy.tiggle.presentation.ui.auth.login.LoginScreen
 import com.ssafy.tiggle.presentation.ui.auth.signup.SignUpScreen
 import com.ssafy.tiggle.presentation.ui.dutchpay.CreateDutchPayScreen
+import com.ssafy.tiggle.presentation.ui.piggybank.MainAccountDetailScreen
 import com.ssafy.tiggle.presentation.ui.piggybank.OpenAccountScreen
 import com.ssafy.tiggle.presentation.ui.piggybank.PiggyBankScreen
 import com.ssafy.tiggle.presentation.ui.piggybank.RegisterAccountScreen
@@ -88,6 +89,9 @@ fun NavigationGraph() {
                             },
                             onBackClick = {
                                 navBackStack.removeLastOrNull()
+                            },
+                            onAccountClick = { accountNo ->
+                                navBackStack.add(Screen.MainAccountDetail(accountNo))
                             }
                         )
                     }
@@ -114,6 +118,13 @@ fun NavigationGraph() {
                         CreateDutchPayScreen(
                             onBackClick = { navBackStack.removeLastOrNull() },
                             onFinish = { navBackStack.removeLastOrNull() }
+                        )
+                    }
+
+                    is Screen.MainAccountDetail -> NavEntry(key) {
+                        MainAccountDetailScreen(
+                            accountNo = key.accountNo,
+                            onBackClick = { navBackStack.removeLastOrNull() }
                         )
                     }
 

@@ -13,5 +13,6 @@ data class PiggyBankUseCases @Inject constructor(
     val getMainAccountUseCase: GetMainAccountUseCase,
     val getPiggyBankAccountUseCase: GetPiggyBankAccountUseCase,
     val setPiggyBankSettingUseCase: SetPiggyBankSettingUseCase,
-    val setEsgCategoryUseCase: SetEsgCategoryUseCase
+    val setEsgCategoryUseCase: SetEsgCategoryUseCase,
+    val getMainAccountDetailUseCase: GetMainAccountDetailUseCase
 )

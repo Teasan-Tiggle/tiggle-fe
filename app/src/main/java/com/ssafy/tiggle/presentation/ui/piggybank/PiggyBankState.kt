@@ -1,6 +1,7 @@
 package com.ssafy.tiggle.presentation.ui.piggybank
 
 import com.ssafy.tiggle.domain.entity.piggybank.MainAccount
+import com.ssafy.tiggle.domain.entity.piggybank.MainAccountDetail
 import com.ssafy.tiggle.domain.entity.piggybank.PiggyBank
 import com.ssafy.tiggle.domain.entity.piggybank.PiggyBankAccount
 
@@ -16,6 +17,9 @@ data class PiggyBankState(
     //바텀 시트
     val showEsgCategorySheet: Boolean = false,
     val tempSelectedCategoryId: Int? = null, // 시트에서 임시 선택
+
+    //주계좌 상세보기
+    val mainAccountDetail: MainAccountDetail = MainAccountDetail(),
 
     val isLoading: Boolean = false,
     // 전체 에러 메시지
