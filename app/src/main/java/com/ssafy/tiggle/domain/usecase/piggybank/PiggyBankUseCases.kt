@@ -9,5 +9,9 @@ data class PiggyBankUseCases @Inject constructor(
     val registerPrimaryAccountUseCase: RegisterPrimaryAccountUseCase,
     val createPiggyBankUseCase: CreatePiggyBankUseCase,
     val sendSMSUseCase: SendSMSUseCase,
-    val verifySMSUseCase: VerifySMSUseCase
+    val verifySMSUseCase: VerifySMSUseCase,
+    val getMainAccountUseCase: GetMainAccountUseCase,
+    val getPiggyBankAccountUseCase: GetPiggyBankAccountUseCase,
+    val setPiggyBankSettingUseCase: SetPiggyBankSettingUseCase,
+    val setEsgCategoryUseCase: SetEsgCategoryUseCase
 )
