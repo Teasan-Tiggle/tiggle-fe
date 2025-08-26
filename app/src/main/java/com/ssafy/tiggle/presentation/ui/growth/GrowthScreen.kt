@@ -45,6 +45,8 @@ import com.ssafy.tiggle.presentation.ui.theme.TiggleGrayText
 fun GrowthScreen(
     modifier: Modifier = Modifier,
     onDonationHistoryClick: () -> Unit = {},
+    onDonationStatusClick: () -> Unit = {},
+    onDonationRankingClick: () -> Unit = {},
     viewModel: GrowthViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -82,8 +84,8 @@ fun GrowthScreen(
                  nextGoalAmount = uiState.nextGoalAmount,
                  currentLevel = uiState.currentLevel,
                  onDonationHistoryClick = onDonationHistoryClick,
-                 onDonationStatusClick = { viewModel.onDonationStatusClick() },
-                 onDonationRankingClick = { viewModel.onDonationRankingClick() }
+                 onDonationStatusClick = onDonationStatusClick,
+                 onDonationRankingClick = onDonationRankingClick
              )
         }
     }

@@ -38,4 +38,7 @@ sealed interface Screen : NavKey {
 
     @Serializable
     object DonationHistory : Screen
+
+    @Serializable
+    object DonationStatus : Screen
 }
