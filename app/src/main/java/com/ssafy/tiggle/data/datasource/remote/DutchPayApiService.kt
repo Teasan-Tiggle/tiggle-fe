@@ -16,7 +16,7 @@ interface DutchPayApiService {
         @Body request: DutchPayRequestDto
     ): Response<BaseResponse<EmptyResponse>>
 
-    @GET("/api/dutchpay/{id}/detail")
+    @GET("/api/dutchpay/requests/{id}")
     suspend fun getDutchPayRequestDetail(
         @Path("id") dutchPayId: Long
     ): Response<BaseResponse<DutchPayRequestDetailResponseDto>>
