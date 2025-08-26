@@ -67,7 +67,8 @@ fun DonationStatusScreen(
     TiggleScreenLayout(
         title = "기부",
         showBackButton = true,
-        onBackClick = onBackClick
+        onBackClick = onBackClick,
+        enableScroll = false
     ) {
         when {
             uiState.isLoading && uiState.donationSummary == null -> {

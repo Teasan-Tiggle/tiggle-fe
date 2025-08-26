@@ -21,8 +21,13 @@ class DonationRepositoryImpl @Inject constructor(
             val response = donationApiService.getDonationHistory()
             if (response.isSuccessful && response.body()?.result == true) {
                 val donationHistoryList = response.body()?.data?.map { dto ->
+                    // 디버깅을 위한 로그 추가
+                    println("DEBUG: API category = '${dto.category}'")
+                    val category = DonationCategory.fromValue(dto.category)
+                    println("DEBUG: Mapped category = ${category.name}")
+                    
                     DonationHistory(
-                        category = DonationCategory.fromValue(dto.category),
+                        category = category,
                         donatedAt = dto.donatedAt,
                         amount = dto.amount,
                         title = dto.title

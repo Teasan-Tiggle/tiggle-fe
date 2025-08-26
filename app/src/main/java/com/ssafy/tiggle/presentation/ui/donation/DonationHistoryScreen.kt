@@ -64,7 +64,8 @@ fun DonationHistoryScreen(
     TiggleScreenLayout(
         title = "나의 기부 기록",
         showBackButton = true,
-        onBackClick = onBackClick
+        onBackClick = onBackClick,
+        enableScroll = false
     ) {
         when {
             uiState.isLoading -> {

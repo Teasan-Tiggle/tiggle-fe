@@ -8,10 +8,10 @@ data class DonationHistory(
 )
 
 enum class DonationCategory(val value: String, val iconResName: String) {
-    PLANET("planet", "planet"),
-    PEOPLE("people", "people"), 
-    PROSPERITY("prosperity", "prosperity");
-    
+    PLANET("Planet", "planet"),
+    PEOPLE("People", "people"),
+    PROSPERITY("Prosperity", "prosperity");
+
     companion object {
         fun fromValue(value: String): DonationCategory {
             return values().find { it.value == value } ?: PLANET
