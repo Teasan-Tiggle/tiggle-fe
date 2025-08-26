@@ -34,7 +34,7 @@ fun NavigationGraph(
     intent: Intent?, // Nullable Intent를 받음
     onDeepLinkHandled: () -> Unit // 딥링크 처리 완료 콜백 함수
 ) {
-    val startDestination = Screen.CreateDutchPay
+    val startDestination = Screen.Login
     val navBackStack = rememberNavBackStack(startDestination)
 
     LaunchedEffect(intent) {
