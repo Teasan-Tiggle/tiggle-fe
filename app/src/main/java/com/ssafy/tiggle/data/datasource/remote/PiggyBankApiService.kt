@@ -3,6 +3,7 @@ package com.ssafy.tiggle.data.datasource.remote
 import com.ssafy.tiggle.data.model.BaseResponse
 import com.ssafy.tiggle.data.model.EmptyResponse
 import com.ssafy.tiggle.data.model.piggybank.request.CreatePiggyBankRequestDto
+import com.ssafy.tiggle.data.model.piggybank.request.PiggyBankEntriesRequestDto
 import com.ssafy.tiggle.data.model.piggybank.request.PiggyBankSettingRequestDto
 import com.ssafy.tiggle.data.model.piggybank.request.PrimaryAccountRequestDto
 import com.ssafy.tiggle.data.model.piggybank.request.SendSMSRequestDto
@@ -14,6 +15,7 @@ import com.ssafy.tiggle.data.model.piggybank.response.CreatePiggyBankResponseDto
 import com.ssafy.tiggle.data.model.piggybank.response.MainAccountDetailResponseDto
 import com.ssafy.tiggle.data.model.piggybank.response.MainAccountResponseDto
 import com.ssafy.tiggle.data.model.piggybank.response.PiggyBankAccountResponseDto
+import com.ssafy.tiggle.data.model.piggybank.response.PiggyBankEntriesResponseDto
 import com.ssafy.tiggle.data.model.piggybank.response.PiggyBankSettingResponseDto
 import com.ssafy.tiggle.data.model.piggybank.response.VerificationCheckResponseDto
 import com.ssafy.tiggle.data.model.piggybank.response.VerifySMSResponseDto
@@ -85,4 +87,9 @@ interface PiggyBankApiService {
         @Query("size") size: Int = 20,
         @Query("sort") sort: String = "DESC"
     ): BaseResponse<MainAccountDetailResponseDto>
+
+    @POST("piggybank/entries")
+    suspend fun getPiggyBankEntries(
+        @Body body: PiggyBankEntriesRequestDto
+    ): BaseResponse<PiggyBankEntriesResponseDto>
 }

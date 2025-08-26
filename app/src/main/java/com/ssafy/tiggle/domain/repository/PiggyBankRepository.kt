@@ -6,6 +6,7 @@ import com.ssafy.tiggle.domain.entity.piggybank.MainAccount
 import com.ssafy.tiggle.domain.entity.piggybank.MainAccountDetail
 import com.ssafy.tiggle.domain.entity.piggybank.PiggyBank
 import com.ssafy.tiggle.domain.entity.piggybank.PiggyBankAccount
+import com.ssafy.tiggle.domain.entity.piggybank.PiggyBankEntry
 
 interface PiggyBankRepository {
     suspend fun getAccountHolder(accountNo: String): Result<AccountHolder>
@@ -39,4 +40,14 @@ interface PiggyBankRepository {
         accountNo: String,
         cursor: String? = null
     ): Result<MainAccountDetail>
+
+    suspend fun getPiggyBankEntries(
+        type: String,
+        cursor: String? = null,
+        size: Int? = null,
+        from: String? = null,
+        to: String? = null,
+        sortKey: String? = null
+    ): Result<List<PiggyBankEntry>>
+
 }

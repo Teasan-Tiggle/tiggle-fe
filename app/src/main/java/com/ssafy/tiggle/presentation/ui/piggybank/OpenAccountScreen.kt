@@ -24,6 +24,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -60,8 +61,14 @@ fun OpenAccountScreen(
     modifier: Modifier = Modifier,
     viewModel: OpenAccountViewModel = hiltViewModel(),
     onBackClick: () -> Unit = {},
-    onFinish: () -> Unit = {}
+    mode: OpenAccountMode = OpenAccountMode.FULL,
+    onFinish: () -> Unit = {},
 ) {
+
+    LaunchedEffect(mode) {
+        viewModel.setMode(mode)
+    }
+
     val uiState by viewModel.uiState.collectAsState()
 
     // 공통 Back 핸들러: 첫 단계면 pop, 아니면 단계-뒤로
@@ -79,7 +86,7 @@ fun OpenAccountScreen(
                 onBackClick = handleTopBack,
                 onTargetDonationAmountChange = viewModel::updateTargetDonationAmount,
                 onPiggyBankNameChange = viewModel::updatePiggyBankName,
-                onNextClick = { viewModel.goToNextStep() }
+                onNextClick = { viewModel.nextFromInfo() }
             )
         }
 

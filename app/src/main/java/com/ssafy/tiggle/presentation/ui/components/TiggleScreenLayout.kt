@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -28,6 +29,7 @@ fun TiggleScreenLayout(
     showBackButton: Boolean = true,
     onBackClick: () -> Unit = {},
     showLogo: Boolean = false,
+    topActions: (@Composable RowScope.() -> Unit)? = null,
     bottomButton: @Composable (() -> Unit)? = null,
     contentPadding: PaddingValues = PaddingValues(horizontal = 32.dp),
     content: @Composable () -> Unit
@@ -45,7 +47,8 @@ fun TiggleScreenLayout(
                 TiggleHeader(
                     title = title,
                     showBackButton = showBackButton,
-                    onBackClick = onBackClick
+                    onBackClick = onBackClick,
+                    actions = topActions
                 )
             }
 
@@ -102,7 +105,7 @@ private fun TiggleScreenLayoutPreview() {
             )
             23
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             Text(
                 text = "여기에 다양한 콘텐츠가 들어갑니다.",
                 fontSize = 14.sp,

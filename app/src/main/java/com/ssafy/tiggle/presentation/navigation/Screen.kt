@@ -1,6 +1,7 @@
 package com.ssafy.tiggle.presentation.navigation
 
 import androidx.navigation3.runtime.NavKey
+import com.ssafy.tiggle.presentation.ui.piggybank.OpenAccountMode
 import kotlinx.serialization.Serializable
 
 /**
@@ -28,7 +29,7 @@ sealed interface Screen : NavKey {
     object SignUp : Screen
 
     @Serializable
-    object OpenAccount : Screen
+    data class OpenAccount(val mode: OpenAccountMode = OpenAccountMode.FULL) : Screen
 
     @Serializable
     object RegisterAccount : Screen
@@ -38,4 +39,8 @@ sealed interface Screen : NavKey {
 
     @Serializable
     data class MainAccountDetail(val accountNo: String) : Screen
+
+    @Serializable
+    object PiggyBankDetail : Screen
 }
+

@@ -26,6 +26,8 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -44,6 +46,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.ssafy.tiggle.R
 import com.ssafy.tiggle.core.utils.Formatter
 import com.ssafy.tiggle.presentation.ui.components.TiggleScreenLayout
@@ -60,11 +65,30 @@ fun PiggyBankScreen(
     onOpenAccountClick: () -> Unit = {},
     onRegisterAccountClick: () -> Unit = {},
     onStartDutchPayClick: () -> Unit = {},
-    onBackClick: () -> Unit = {},
     onAccountClick: (String) -> Unit = {},
+    onShowPiggyBankDetailClick: () -> Unit = {},
     viewModel: PiggyBankViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    // 최초 1회 로드
+    LaunchedEffect(Unit) {
+        viewModel.setPiggyBankAccount()
+        viewModel.setMainAccount()
+    }
+
+    //다시 화면으로 돌아왔을 때(ON_RESUME) 갱신
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.setPiggyBankAccount()
+                viewModel.setMainAccount()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 
     TiggleScreenLayout(
         showBackButton = false,
@@ -99,7 +123,7 @@ fun PiggyBankScreen(
                 Spacer(Modifier.height(50.dp))
 
                 if (uiState.hasPiggyBank) {
-                    TodaySavingBanner(uiState = uiState)
+                    TodaySavingBanner(uiState = uiState, onClick = onShowPiggyBankDetailClick)
                 } else {
                     DottedActionCard(
                         title = "티끌 저금통 개설",
@@ -161,9 +185,7 @@ fun PiggyBankScreen(
 
                 Spacer(Modifier.height(24.dp))
             }
-            // ⬆️ 스크롤 끝
 
-            // BottomSheet는 스크롤 영역 밖에 두는 게 자연스러움 (오버레이로 뜨니까)
             if (uiState.showEsgCategorySheet) {
                 EsgCategoryBottomSheet(
                     show = uiState.showEsgCategorySheet,
@@ -262,7 +284,7 @@ private fun PlusIcon(color: Color) {
 }
 
 @Composable
-private fun TodaySavingBanner(uiState: PiggyBankState) {
+private fun TodaySavingBanner(uiState: PiggyBankState, onClick: () -> Unit) {
     val radius = 18.dp
     Box(
         modifier = Modifier
@@ -279,6 +301,7 @@ private fun TodaySavingBanner(uiState: PiggyBankState) {
                 )
             )
             .padding(horizontal = 20.dp, vertical = 18.dp)
+            .clickable { onClick() }
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
@@ -364,12 +387,12 @@ private fun AccountCard(uiState: PiggyBankState, onClick: (String) -> Unit) {
                 )
             }
         }
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(17.dp))
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.End) {
             Text("잔액", color = TiggleGrayText, style = AppTypography.bodySmall)
             Spacer(Modifier.height(5.dp))
             Text(
-                "${uiState.mainAccount.balance}원",
+                "${formatAmount(uiState.mainAccount.balance.toLong())}원",
                 color = Color.Black,
                 fontSize = 22.sp,
                 fontWeight = FontWeight.SemiBold

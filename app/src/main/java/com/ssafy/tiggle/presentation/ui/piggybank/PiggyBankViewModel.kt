@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.ssafy.tiggle.domain.entity.piggybank.EsgCategory
 import com.ssafy.tiggle.domain.usecase.piggybank.PiggyBankUseCases
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -266,9 +267,81 @@ class PiggyBankViewModel @Inject constructor(
         }
     }
 
+    fun loadAllPiggyEntries(
+        changeCursor: String? = null,
+        dutchCursor: String? = null,
+        size: Int? = 20,
+        sortKey: String? = null
+    ) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+
+            // 병렬 호출
+            val changeDeferred = async {
+                useCases.getPiggyBankEntryUseCase(
+                    type = "CHANGE",
+                    cursor = changeCursor,
+                    size = size,
+                    sortKey = sortKey
+                )
+            }
+            val dutchDeferred = async {
+                useCases.getPiggyBankEntryUseCase(
+                    type = "DUTCHPAY",
+                    cursor = dutchCursor,
+                    size = size,
+                    sortKey = sortKey
+                )
+            }
+
+            val changeRes = changeDeferred.await()
+            val dutchRes = dutchDeferred.await()
+
+            val changeList = changeRes.getOrElse { emptyList() }
+            val dutchList = dutchRes.getOrElse { emptyList() }
+
+            val error = changeRes.exceptionOrNull()?.message
+                ?: dutchRes.exceptionOrNull()?.message
+
+            _uiState.update {
+                it.copy(
+                    changeList = changeList,
+                    dutchpayList = dutchList,
+                    isLoading = false,
+                    errorMessage = error
+                )
+            }
+        }
+    }
+
+    fun reloadEntriesByType(
+        type: String,
+        cursor: String? = null,
+        size: Int? = 20,
+        sortKey: String? = null
+    ) {
+        viewModelScope.launch {
+            val result = useCases.getPiggyBankEntryUseCase(type, cursor, size, null, null, sortKey)
+            result.onSuccess { list ->
+                _uiState.update { s ->
+                    when (type) {
+                        "CHANGE" -> s.copy(changeList = list)
+                        "DUTCHPAY" -> s.copy(dutchpayList = list)
+                        else -> s
+                    }
+                }
+            }.onFailure { e ->
+                _uiState.update { it.copy(errorMessage = e.message) }
+            }
+        }
+    }
+
+    fun setSelectedTab(tab: PiggyTab) {
+        _uiState.update { it.copy(selectedTab = tab) }
+    }
 }
 
-fun formatAmount(amount: Int): String {
+fun formatAmount(amount: Long): String {
     val df = DecimalFormat("#,###")
     return df.format(amount)
 }

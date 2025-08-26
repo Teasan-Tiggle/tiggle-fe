@@ -357,4 +357,24 @@ class OpenAccountViewModel @Inject constructor(
         }
     }
 
+    private var mode: OpenAccountMode = OpenAccountMode.FULL
+    fun setMode(m: OpenAccountMode) {
+        mode = m
+    }
+
+    // 기존 goToNextStep는 그대로 두고,
+    // INFO에서만 분기하는 전용 진입점 추가
+    fun nextFromInfo() {
+        if (mode == OpenAccountMode.SIMPLE) {
+            // ✅ 간소 플로우: 바로 SUCCESS
+            _uiState.update { it.copy(openAccountStep = OpenAccountStep.SUCCESS) }
+            return
+        }
+        // ✅ 풀 플로우: 기존 단계 진행
+        goToNextStep()
+    }
+
+    fun modifyPiggyBankInfo() {
+        useCases.setPiggyBankSettingUseCase
+    }
 }

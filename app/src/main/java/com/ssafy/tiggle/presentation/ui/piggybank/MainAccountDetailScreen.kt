@@ -65,7 +65,7 @@ fun MainAccountDetailScreen(
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = "${formatAmount(state.mainAccountDetail.transactions.firstOrNull()?.balanceAfter ?: 0)}원",
+                        text = "${formatAmount(state.mainAccountDetail.transactions.firstOrNull()?.balanceAfter?.toLong() ?: 0)}원",
                         color = Color.White,
                         fontSize = 28.sp,
                         fontWeight = FontWeight.Bold
@@ -138,7 +138,7 @@ fun TransactionItem(tx: DomainTransaction) {
                 Text(
                     text = buildString {
                         append(if (tx.transactionType == "출금") "- " else "+ ")
-                        append("${formatAmount(tx.amount)}원")
+                        append("${formatAmount(tx.amount.toLong())}원")
                     },
                     fontSize = 18.sp,
                     fontWeight = FontWeight.ExtraBold,
@@ -160,7 +160,7 @@ fun TransactionItem(tx: DomainTransaction) {
                     color = timeTextColor
                 )
                 Text(
-                    text = "${formatAmount(tx.balanceAfter)}원",
+                    text = "${formatAmount(tx.balanceAfter.toLong())}원",
                     fontSize = 15.sp,
                     color = timeTextColor
                 )

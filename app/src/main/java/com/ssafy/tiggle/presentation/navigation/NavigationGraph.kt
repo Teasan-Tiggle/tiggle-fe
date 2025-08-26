@@ -16,7 +16,9 @@ import com.ssafy.tiggle.presentation.ui.auth.login.LoginScreen
 import com.ssafy.tiggle.presentation.ui.auth.signup.SignUpScreen
 import com.ssafy.tiggle.presentation.ui.dutchpay.CreateDutchPayScreen
 import com.ssafy.tiggle.presentation.ui.piggybank.MainAccountDetailScreen
+import com.ssafy.tiggle.presentation.ui.piggybank.OpenAccountMode
 import com.ssafy.tiggle.presentation.ui.piggybank.OpenAccountScreen
+import com.ssafy.tiggle.presentation.ui.piggybank.PiggyBankDetailRoute
 import com.ssafy.tiggle.presentation.ui.piggybank.PiggyBankScreen
 import com.ssafy.tiggle.presentation.ui.piggybank.RegisterAccountScreen
 
@@ -79,7 +81,7 @@ fun NavigationGraph() {
                     is BottomScreen.PiggyBank -> NavEntry(key) {
                         PiggyBankScreen(
                             onOpenAccountClick = {
-                                navBackStack.add(Screen.OpenAccount)
+                                navBackStack.add(Screen.OpenAccount())
                             },
                             onRegisterAccountClick = {
                                 navBackStack.add(Screen.RegisterAccount)
@@ -87,17 +89,19 @@ fun NavigationGraph() {
                             onStartDutchPayClick = {
                                 navBackStack.add(Screen.CreateDutchPay)
                             },
-                            onBackClick = {
-                                navBackStack.removeLastOrNull()
-                            },
+
                             onAccountClick = { accountNo ->
                                 navBackStack.add(Screen.MainAccountDetail(accountNo))
+                            },
+                            onShowPiggyBankDetailClick = {
+                                navBackStack.add(Screen.PiggyBankDetail)
                             }
                         )
                     }
 
                     is Screen.OpenAccount -> NavEntry(key) {
                         OpenAccountScreen(
+                            mode = key.mode,
                             onBackClick = { navBackStack.removeLastOrNull() },
                             onFinish = {
                                 navBackStack.removeLastOrNull()
@@ -125,6 +129,13 @@ fun NavigationGraph() {
                         MainAccountDetailScreen(
                             accountNo = key.accountNo,
                             onBackClick = { navBackStack.removeLastOrNull() }
+                        )
+                    }
+
+                    is Screen.PiggyBankDetail -> NavEntry(key) {
+                        PiggyBankDetailRoute(
+                            onBackClick = { navBackStack.removeLastOrNull() },
+                            onMore = { navBackStack.add(Screen.OpenAccount(OpenAccountMode.SIMPLE)) }
                         )
                     }
 
