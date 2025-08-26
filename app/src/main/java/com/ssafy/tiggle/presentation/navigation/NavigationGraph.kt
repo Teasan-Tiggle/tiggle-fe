@@ -18,6 +18,7 @@ import com.ssafy.tiggle.presentation.ui.dutchpay.CreateDutchPayScreen
 import com.ssafy.tiggle.presentation.ui.piggybank.OpenAccountScreen
 import com.ssafy.tiggle.presentation.ui.piggybank.PiggyBankScreen
 import com.ssafy.tiggle.presentation.ui.piggybank.RegisterAccountScreen
+import com.ssafy.tiggle.presentation.ui.shorts.ShortsScreen
 
 /**
  * 앱의 메인 네비게이션
@@ -29,7 +30,7 @@ fun NavigationGraph() {
 
     Scaffold(
         bottomBar = {
-            if (navBackStack.last() is BottomScreen)
+            if (navBackStack.last() is BottomScreen && navBackStack.last() != BottomScreen.Shorts)
                 BottomNavigation(navBackStack)
         }
     ) { innerPadding ->
@@ -88,7 +89,7 @@ fun NavigationGraph() {
                             },
                             onBackClick = {
                                 navBackStack.removeLastOrNull()
-                            }
+                                                                                                                                                                                                                                                                                                                                                                                                                                           }
                         )
                     }
 
@@ -135,9 +136,5 @@ private fun GrowthScreen() {
     Text("성장")
 }
 
-@Composable
-private fun ShortsScreen() {
-    Text("숏폼")
-}
 
 
