@@ -1,7 +1,6 @@
 package com.ssafy.tiggle.core.utils
 
-import android.os.Build
-import androidx.annotation.RequiresApi
+import android.annotation.SuppressLint
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
@@ -13,7 +12,7 @@ object Formatter {
         String.format(locale, "%,d원", amount)
 
     // ISO 8601 날짜/시간 포맷팅: "2025-08-26T01:25:21" -> "2025.08.26 01:25"
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SuppressLint("NewApi")
     fun formatDateTime(isoDateTime: String): String {
         return try {
             val dateTime = LocalDateTime.parse(isoDateTime)
@@ -26,7 +25,7 @@ object Formatter {
     }
 
     // 간단한 날짜 포맷팅: "2025-08-26T01:25:21" -> "8월 26일"
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SuppressLint("NewApi")
     fun formatDateOnly(isoDateTime: String): String {
         return try {
             val dateTime = LocalDateTime.parse(isoDateTime)
@@ -39,7 +38,7 @@ object Formatter {
     }
 
     // 시간만 포맷팅: "2025-08-26T01:25:21" -> "오전 1:25"
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SuppressLint("NewApi")
     fun formatTimeOnly(isoDateTime: String): String {
         return try {
             val dateTime = LocalDateTime.parse(isoDateTime)
@@ -52,7 +51,7 @@ object Formatter {
     }
 
     // 상대적 시간 표시: "방금", "5분 전", "3시간 전", "2일 전" 등
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SuppressLint("NewApi")
     fun formatRelativeTime(isoDateTime: String): String {
         return try {
             val dateTime = LocalDateTime.parse(isoDateTime)
