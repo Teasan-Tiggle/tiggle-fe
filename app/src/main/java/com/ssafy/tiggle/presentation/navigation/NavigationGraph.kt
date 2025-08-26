@@ -14,7 +14,9 @@ import androidx.navigation3.ui.NavDisplay
 import androidx.navigation3.ui.rememberSceneSetupNavEntryDecorator
 import com.ssafy.tiggle.presentation.ui.auth.login.LoginScreen
 import com.ssafy.tiggle.presentation.ui.auth.signup.SignUpScreen
+import com.ssafy.tiggle.presentation.ui.donation.DonationHistoryScreen
 import com.ssafy.tiggle.presentation.ui.dutchpay.CreateDutchPayScreen
+import com.ssafy.tiggle.presentation.ui.growth.GrowthScreen
 import com.ssafy.tiggle.presentation.ui.piggybank.OpenAccountScreen
 import com.ssafy.tiggle.presentation.ui.piggybank.PiggyBankScreen
 import com.ssafy.tiggle.presentation.ui.piggybank.RegisterAccountScreen
@@ -68,7 +70,11 @@ fun NavigationGraph() {
                     }
 
                     is BottomScreen.Growth -> NavEntry(key) {
-                        GrowthScreen()
+                        GrowthScreen(
+                            onDonationHistoryClick = {
+                                navBackStack.add(Screen.DonationHistory)
+                            }
+                        )
                     }
 
                     is BottomScreen.Shorts -> NavEntry(key) {
@@ -117,6 +123,12 @@ fun NavigationGraph() {
                         )
                     }
 
+                    is Screen.DonationHistory -> NavEntry(key) {
+                        DonationHistoryScreen(
+                            onBackClick = { navBackStack.removeLastOrNull() }
+                        )
+                    }
+
                     else -> throw IllegalArgumentException("Unknown route: $key")
                 }
 
@@ -130,10 +142,6 @@ fun NavigationGraph() {
  * 메인 화면의 바텀 네비게이션
  */
 // 임시 화면들
-@Composable
-private fun GrowthScreen() {
-    Text("성장")
-}
 
 @Composable
 private fun ShortsScreen() {
