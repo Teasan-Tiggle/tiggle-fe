@@ -86,7 +86,13 @@ fun OpenAccountScreen(
                 onBackClick = handleTopBack,
                 onTargetDonationAmountChange = viewModel::updateTargetDonationAmount,
                 onPiggyBankNameChange = viewModel::updatePiggyBankName,
-                onNextClick = { viewModel.nextFromInfo() }
+                onNextClick = {
+                    if (mode == OpenAccountMode.SIMPLE) {
+                        viewModel.modifyPiggyBankInfo()
+                    } else {
+                        viewModel.goToNextStep()
+                    }
+                }
             )
         }
 
@@ -121,6 +127,7 @@ fun OpenAccountScreen(
         OpenAccountStep.SUCCESS -> {
             SuccessScreen(
                 uiState = uiState,
+                mode = mode,
                 onFinish = onFinish,
             )
         }
@@ -205,8 +212,11 @@ fun AccountInfoInputScreen(
             Text("기부 목표 금액", style = AppTypography.bodyLarge)
             Spacer(Modifier.height(8.dp))
 
+            val target = uiState.piggyBankAccount.targetDonationAmount
+            val displayTarget = if (target > 0) target.toString() else "1000"
+
             QuickAmountRow(
-                selected = uiState.piggyBankAccount.targetDonationAmount.toString(),
+                selected =displayTarget,
                 onSelect = onTargetDonationAmountChange
             )
 
@@ -214,7 +224,7 @@ fun AccountInfoInputScreen(
 
             // 금액 직접 입력
             OutlinedTextField(
-                value = uiState.piggyBankAccount.targetDonationAmount.toString(),
+                value = displayTarget,
                 onValueChange = onTargetDonationAmountChange,
                 placeholder = { Text("기부하고 싶은 금액을 입력하세요") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -793,6 +803,7 @@ private fun OtpCodeInput(
 @Composable
 private fun SuccessScreen(
     uiState: OpenAccountState,
+    mode: OpenAccountMode,
     onFinish: () -> Unit,
 ) {
     TiggleScreenLayout(
@@ -835,14 +846,20 @@ private fun SuccessScreen(
             modifier = Modifier.align(Alignment.CenterHorizontally)
         ) {
             Text(
-                text = "티끌 계좌 개설 완료!",
+                text = if (mode == OpenAccountMode.SIMPLE)
+                    "티끌 계좌 수정 완료!"
+                else
+                    "티끌 계좌 개설 완료!",
                 color = Color.Black,
                 fontSize = 22.sp,
                 style = AppTypography.headlineLarge,
             )
             Spacer(Modifier.height(6.dp))
             Text(
-                text = "티끌 저금통 계좌가 성공적으로 개설되었습니다.\n 이제 티끌을 모아 저금통을 채워보세요!",
+                text = if (mode == OpenAccountMode.SIMPLE)
+                    "티끌 저금통 계좌가 성공적으로 개설되었습니다.\n 이제 티끌을 모아 저금통을 채워보세요!"
+                else
+                    "티끌 저금통 계좌가 성공적으로 수정되었습니다.\n 이제 티끌을 모아 저금통을 채워보세요!",
                 color = TiggleGrayText,
                 fontSize = 13.sp,
                 style = AppTypography.bodySmall,
@@ -993,7 +1010,8 @@ fun Preview_CodeScreen_Error() {
 fun Preview_SuccessScreen() {
     SuccessScreen(
         uiState = OpenAccountState(openAccountStep = OpenAccountStep.SUCCESS),
-        onFinish = {}
+        onFinish = {},
+        mode = OpenAccountMode.SIMPLE
     )
 }
 
