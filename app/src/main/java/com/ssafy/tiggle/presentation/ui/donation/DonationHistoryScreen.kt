@@ -150,6 +150,7 @@ private fun DonationHistoryContent(
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 private fun DonationHistoryItem(
     donation: DonationHistory
