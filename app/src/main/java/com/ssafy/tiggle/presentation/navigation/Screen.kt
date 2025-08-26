@@ -35,4 +35,10 @@ sealed interface Screen : NavKey {
 
     @Serializable
     object CreateDutchPay : Screen
+
+    @Serializable
+    object DonationHistory : Screen
+
+    @Serializable
+    object DonationStatus : Screen
 }
