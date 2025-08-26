@@ -99,6 +99,7 @@ fun DonationHistoryScreen(
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 private fun DonationHistoryContent(
     donationHistoryList: List<DonationHistory>
