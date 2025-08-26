@@ -6,7 +6,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -42,7 +41,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.ssafy.tiggle.R
 import com.ssafy.tiggle.core.utils.Formatter
 import com.ssafy.tiggle.presentation.ui.components.TiggleScreenLayout
@@ -60,7 +59,7 @@ fun PiggyBankScreen(
     onRegisterAccountClick: () -> Unit = {},
     onStartDutchPayClick: () -> Unit = {},
     onBackClick: () -> Unit = {},
-    viewModel: PiggyBankViewModel = viewModel()
+    viewModel: PiggyBankViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -87,14 +86,12 @@ fun PiggyBankScreen(
                 fontSize = 13.sp,
                 style = AppTypography.bodySmall
             )
-            Spacer(Modifier.height(30.dp))
+            Spacer(Modifier.height(50.dp))
 
             //계좌 존재 여부에 따라
             if (uiState.hasPiggyBank) {
                 TodaySavingBanner(
-                    amount = uiState.todaySaving,
-                    lastWeek = uiState.lastWeekRemainder,
-                    rounded = uiState.lastWeekRounded
+                    uiState = uiState
                 )
             } else {
                 DottedActionCard(
@@ -106,10 +103,7 @@ fun PiggyBankScreen(
             Spacer(Modifier.height(10.dp))
             if (uiState.hasLinkedAccount) {
                 AccountCard(
-                    bank = uiState.accountBank.orEmpty(),
-                    name = uiState.accountName.orEmpty(),
-                    number = uiState.accountNumberMasked.orEmpty(),
-                    balance = uiState.accountBalance ?: 0
+                    uiState = uiState
                 )
             } else {
                 DottedActionCard(
@@ -126,14 +120,14 @@ fun PiggyBankScreen(
                     onStart = onStartDutchPayClick
                 )
             }
-            Spacer(Modifier.height(18.dp))
+            Spacer(Modifier.height(25.dp))
 
             // 스위치 섹션
             TiggleSwitchRow(
-                title = "잔돈 자동 기부",
-                subtitle = "매일 잔정에 1,000원 미만 잔돈을 자동으로 기부합니다",
-                checked = uiState.changeLeftoverDonate,
-                onCheckedChange = viewModel::setChangeLeftoverDonate
+                title = "저금통 자동 기부",
+                subtitle = "일정 금액의 티끌이 쌓이면 기부 단체에 자동으로 기부됩니다.",
+                checked = uiState.piggyBank.autoDonation,
+                onCheckedChange = viewModel::onToggleAutoDonation
             )
 
             HorizontalDivider(
@@ -144,12 +138,21 @@ fun PiggyBankScreen(
 
             // 스위치 섹션 2
             TiggleSwitchRow(
-                title = "목표 달성 자동 기부",
-                subtitle = "더치페이 할 때 남는 자투리 금액을 기부할 수 있습니다",
-                checked = uiState.achieveGoalDonate,
-                onCheckedChange = viewModel::setAchieveGoalDonate
+                title = "잔돈 자동 저금",
+                subtitle = "매일 자정에 1,000원 미만 잔돈을 자동으로 저금합니다.",
+                checked = uiState.piggyBank.autoSaving,
+                onCheckedChange = viewModel::onToggleAutoSaving
             )
 
+            if (uiState.showEsgCategorySheet) {
+                EsgCategoryBottomSheet(   // <- 네가 만든 컴포넌트 이름
+                    show = uiState.showEsgCategorySheet,
+                    selectedId = uiState.piggyBank.esgCategory?.id,
+                    onPick = viewModel::onPickEsgCategory,   // 카테고리 탭
+                    onConfirm = viewModel::onConfirmAutoDonation, // 확인 버튼
+                    onDismiss = viewModel::onDismissEsgSheet   // 바깥 터치/뒤로
+                )
+            }
             HorizontalDivider(
                 color = TiggleGray,
                 thickness = 0.5.dp,
@@ -245,11 +248,12 @@ private fun PlusIcon(color: Color) {
 }
 
 @Composable
-private fun TodaySavingBanner(amount: Int, lastWeek: Int, rounded: Int) {
+private fun TodaySavingBanner(uiState: PiggyBankState) {
     val radius = 18.dp
     Box(
         modifier = Modifier
             .fillMaxWidth()
+            .height(130.dp)
             .clip(RoundedCornerShape(radius))
             .background(
                 brush = Brush.horizontalGradient(
@@ -264,17 +268,23 @@ private fun TodaySavingBanner(amount: Int, lastWeek: Int, rounded: Int) {
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text("오늘 모인 띠끌", color = Color(0xCCFFFFFF), style = AppTypography.bodySmall)
+                Text(
+                    text = uiState.piggyBankAccount.name,
+                    color = Color(0xCCFFFFFF),
+                    style = AppTypography.bodySmall
+                )
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    "${amount}원",
+                    "${uiState.piggyBankAccount.currentAmount}원",
                     color = Color.White,
                     fontSize = 34.sp,
                     fontWeight = FontWeight.ExtraBold
                 )
-                Spacer(Modifier.height(6.dp))
+                Spacer(Modifier.height(10.dp))
                 Text(
-                    "지난주 잔액 ${Formatter.formatCurrency(lastWeek.toLong())} → ${Formatter.formatCurrency(rounded.toLong())}",
+                    "+ 지난주에 ${
+                        Formatter.formatCurrency(uiState.piggyBankAccount.lastWeekSavedAmount)
+                    }이 저금 됐어요",
                     color = Color(0xE6FFFFFF),
                     style = AppTypography.bodySmall
                 )
@@ -295,11 +305,12 @@ private fun TodaySavingBanner(amount: Int, lastWeek: Int, rounded: Int) {
 }
 
 @Composable
-private fun AccountCard(bank: String, name: String, number: String, balance: Int) {
+private fun AccountCard(uiState: PiggyBankState) {
     val radius = 14.dp
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .height(130.dp)
             .clip(RoundedCornerShape(radius))
             .background(Color.White)
             .border(1.dp, Color(0x11000000), RoundedCornerShape(radius))
@@ -318,13 +329,17 @@ private fun AccountCard(bank: String, name: String, number: String, balance: Int
             Spacer(Modifier.width(10.dp))
             Column(Modifier.weight(1f)) {
                 Text(
-                    "$name",
+                    "${uiState.mainAccount.accountName}",
                     color = Color.Black,
                     style = AppTypography.bodyLarge,
                     fontSize = 15.sp
                 )
                 Spacer(Modifier.height(2.dp))
-                Text("$bank $number", color = TiggleGrayText, style = AppTypography.bodySmall)
+                Text(
+                    "신한 ${uiState.mainAccount.accountNo}",
+                    color = TiggleGrayText,
+                    style = AppTypography.bodySmall
+                )
             }
             Box() {
                 Image(
@@ -335,10 +350,11 @@ private fun AccountCard(bank: String, name: String, number: String, balance: Int
             }
         }
         Spacer(Modifier.height(16.dp))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.End) {
             Text("잔액", color = TiggleGrayText, style = AppTypography.bodySmall)
+            Spacer(Modifier.height(5.dp))
             Text(
-                Formatter.formatCurrency(balance.toLong()),
+                "${uiState.mainAccount.balance}원",
                 color = Color.Black,
                 fontSize = 22.sp,
                 fontWeight = FontWeight.SemiBold
@@ -349,6 +365,7 @@ private fun AccountCard(bank: String, name: String, number: String, balance: Int
 
 @Composable
 private fun DutchButtonsRow(onStatus: () -> Unit, onStart: () -> Unit) {
+    Spacer(Modifier.height(20.dp))
     Row(Modifier.fillMaxWidth()) {
         OutlinedButton(
             onClick = onStatus,

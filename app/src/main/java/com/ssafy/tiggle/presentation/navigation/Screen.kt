@@ -37,5 +37,11 @@ sealed interface Screen : NavKey {
     object CreateDutchPay : Screen
 
     @Serializable
+    object DonationHistory : Screen
+
+    @Serializable
+    object DonationStatus : Screen
+
+    @Serializable
     data class DutchpayRecieve(val dutchPayId: Long) : Screen
 }

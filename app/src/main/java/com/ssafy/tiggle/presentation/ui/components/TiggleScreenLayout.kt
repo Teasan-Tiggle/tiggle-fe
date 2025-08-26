@@ -7,7 +7,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -28,51 +31,68 @@ fun TiggleScreenLayout(
     onBackClick: () -> Unit = {},
     showLogo: Boolean = false,
     bottomButton: @Composable (() -> Unit)? = null,
+    enableScroll: Boolean = true,
     content: @Composable () -> Unit
 ) {
-    Box(
+    val scrollState = rememberScrollState()
+
+    Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
+            .imePadding() // imePadding이 키보드 높이만큼 패딩을 자동으로 추가해줍니다.
     ) {
-        Column(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            // 헤더
-            if (showBackButton || title != null) {
-                TiggleHeader(
-                    title = title,
-                    showBackButton = showBackButton,
-                    onBackClick = onBackClick
-                )
-            }
+        // 헤더
+        if (showBackButton || title != null) {
+            TiggleHeader(
+                title = title,
+                showBackButton = showBackButton,
+                onBackClick = onBackClick
+            )
+        }
 
-            // 로고 (선택적)
-            if (showLogo) {
-                Spacer(modifier = Modifier.height(32.dp))
-                TiggleLogo()
+        // 메인 콘텐츠
+        if (enableScroll) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .padding(horizontal = 32.dp)
+                    .verticalScroll(scrollState)
+            ) {
+                if (showLogo) {
+                    TiggleLogo()
+                }
+                content()
             }
-
-            // 메인 콘텐츠
+        } else {
+            // LazyColumn 등을 사용하는 화면을 위한 레이아웃
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
                     .padding(horizontal = 32.dp)
             ) {
-                content()
-            }
-
-            // 하단 버튼 (선택적)
-            bottomButton?.let {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 32.dp)
-                        .padding(bottom = 32.dp)
-                ) {
-                    it()
+                if (showLogo) {
+                    Column {
+                        TiggleLogo()
+                        content()
+                    }
+                } else {
+                    content()
                 }
+            }
+        }
+
+        // 하단 버튼 (선택적)
+        bottomButton?.let {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 32.dp)
+                    .padding(bottom = 32.dp)
+            ) {
+                it()
             }
         }
     }
@@ -100,7 +120,7 @@ private fun TiggleScreenLayoutPreview() {
             )
             23
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             Text(
                 text = "여기에 다양한 콘텐츠가 들어갑니다.",
                 fontSize = 14.sp,

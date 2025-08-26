@@ -1,13 +1,10 @@
 package com.ssafy.tiggle.presentation.navigation
 
-import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavEntry
@@ -18,7 +15,6 @@ import androidx.navigation3.ui.rememberSceneSetupNavEntryDecorator
 import com.ssafy.tiggle.presentation.ui.auth.login.LoginScreen
 import com.ssafy.tiggle.presentation.ui.auth.signup.SignUpScreen
 import com.ssafy.tiggle.presentation.ui.dutchpay.CreateDutchPayScreen
-import com.ssafy.tiggle.presentation.ui.dutchpay.DutchpayRecieveScreen
 import com.ssafy.tiggle.presentation.ui.piggybank.OpenAccountScreen
 import com.ssafy.tiggle.presentation.ui.piggybank.PiggyBankScreen
 import com.ssafy.tiggle.presentation.ui.piggybank.RegisterAccountScreen
@@ -37,12 +33,12 @@ fun NavigationGraph(
     LaunchedEffect(intent) {
         val data: Uri? = intent?.data
         android.util.Log.d("NavigationGraph", "LaunchedEffect triggered - intent: $intent, data: $data")
-        
+
         if (data != null && data.scheme == "tiggle" && data.host == "dutchpay") {
             android.util.Log.d("NavigationGraph", "Deep link detected: $data")
             val dutchPayId = data.lastPathSegment
             android.util.Log.d("NavigationGraph", "Extracted dutchPayId: $dutchPayId")
-            
+
             if (dutchPayId != null) {
                 try {
                     navBackStack.clear()
@@ -61,7 +57,7 @@ fun NavigationGraph(
 
     Scaffold(
         bottomBar = {
-            if (navBackStack.last() is BottomScreen)
+            if (navBackStack.last() is BottomScreen && navBackStack.last() != BottomScreen.Shorts)
                 BottomNavigation(navBackStack)
         }
     ) { innerPadding ->
@@ -100,7 +96,17 @@ fun NavigationGraph(
                     }
 
                     is BottomScreen.Growth -> NavEntry(key) {
-                        GrowthScreen()
+                        GrowthScreen(
+                            onDonationHistoryClick = {
+                                navBackStack.add(Screen.DonationHistory)
+                            },
+                            onDonationStatusClick = {
+                                navBackStack.add(Screen.DonationStatus)
+                            },
+                            onDonationRankingClick = {
+                                // TODO: 기부 랭킹 화면 구현 시 추가
+                            }
+                        )
                     }
 
                     is BottomScreen.Shorts -> NavEntry(key) {
@@ -154,6 +160,18 @@ fun NavigationGraph(
                         DutchpayRecieveScreen(dutchPayId = key.dutchPayId)
                     }
 
+                    is Screen.DonationHistory -> NavEntry(key) {
+                        DonationHistoryScreen(
+                            onBackClick = { navBackStack.removeLastOrNull() }
+                        )
+                    }
+
+                    is Screen.DonationStatus -> NavEntry(key) {
+                        DonationStatusScreen(
+                            onBackClick = { navBackStack.removeLastOrNull() }
+                        )
+                    }
+
                     else -> throw IllegalArgumentException("Unknown route: $key")
                 }
 
@@ -167,14 +185,6 @@ fun NavigationGraph(
  * 메인 화면의 바텀 네비게이션
  */
 // 임시 화면들
-@Composable
-private fun GrowthScreen() {
-    Text("성장")
-}
 
-@Composable
-private fun ShortsScreen() {
-    Text("숏폼")
-}
 
 
