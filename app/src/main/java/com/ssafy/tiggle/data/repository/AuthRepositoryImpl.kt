@@ -5,8 +5,8 @@ import com.google.gson.Gson
 import com.ssafy.tiggle.data.datasource.local.AuthDataSource
 import com.ssafy.tiggle.data.datasource.remote.AuthApiService
 import com.ssafy.tiggle.data.model.BaseResponse
-import com.ssafy.tiggle.data.model.LoginRequestDto
-import com.ssafy.tiggle.data.model.SignUpRequestDto
+import com.ssafy.tiggle.data.model.auth.request.LoginRequestDto
+import com.ssafy.tiggle.data.model.auth.request.SignUpRequestDto
 import com.ssafy.tiggle.domain.entity.auth.UserSignUp
 import com.ssafy.tiggle.domain.repository.AuthRepository
 import javax.inject.Inject

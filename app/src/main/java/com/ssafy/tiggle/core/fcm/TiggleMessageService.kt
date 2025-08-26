@@ -97,6 +97,11 @@ class TiggleMessagingService : FirebaseMessagingService() {
 
         val intent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            // 딥링크 정보를 Intent에 추가
+            if (deepLink != null) {
+                // URI 형태로 설정하여 NavigationGraph에서 처리할 수 있도록 함
+                data = android.net.Uri.parse(deepLink)
+            }
         }
         val pending = PendingIntent.getActivity(
             this, 0, intent,

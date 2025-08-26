@@ -188,7 +188,7 @@ private fun DonationHistoryItem(
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = donation.donatedAt,
+                text = Formatter.formatDateTime(donation.donatedAt),
                 fontSize = 12.sp,
                 color = TiggleGrayText,
                 style = AppTypography.bodySmall

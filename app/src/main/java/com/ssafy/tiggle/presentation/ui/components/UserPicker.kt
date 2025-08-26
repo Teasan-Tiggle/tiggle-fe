@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -101,7 +102,9 @@ fun UserPicker(
             colors = CardDefaults.cardColors(containerColor = Color.White),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
         ) {
-            LazyColumn {
+            LazyColumn(
+                modifier = Modifier.heightIn(max = 400.dp)
+            ) {
                 items(filteredUsers, key = { it.id }) { user ->
                     UserRow(
                         user = user,

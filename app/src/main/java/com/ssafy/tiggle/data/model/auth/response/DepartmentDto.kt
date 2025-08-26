@@ -1,4 +1,4 @@
-package com.ssafy.tiggle.data.model
+package com.ssafy.tiggle.data.model.auth.response
 
 import com.ssafy.tiggle.domain.entity.auth.Department
 
