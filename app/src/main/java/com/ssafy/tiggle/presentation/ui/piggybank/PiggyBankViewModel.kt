@@ -5,12 +5,14 @@ import androidx.lifecycle.viewModelScope
 import com.ssafy.tiggle.domain.entity.piggybank.EsgCategory
 import com.ssafy.tiggle.domain.usecase.piggybank.PiggyBankUseCases
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
+import java.text.DecimalFormat
 import javax.inject.Inject
 
 @HiltViewModel
@@ -251,4 +253,107 @@ class PiggyBankViewModel @Inject constructor(
         }
     }
 
+    fun loadTransactions(accountNo: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+
+            useCases.getMainAccountDetailUseCase(accountNo, null)
+                .onSuccess { detail ->
+                    _uiState.update { it.copy(mainAccountDetail = detail, isLoading = false) }
+                }
+                .onFailure { e ->
+                    _uiState.update { it.copy(errorMessage = e.message, isLoading = false) }
+                }
+        }
+    }
+
+    fun loadAllPiggyEntries(
+        changeCursor: String? = null,
+        dutchCursor: String? = null,
+        size: Int? = 20,
+        sortKey: String? = null
+    ) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+
+            // 병렬 호출
+            val changeDeferred = async {
+                useCases.getPiggyBankEntryUseCase(
+                    type = "CHANGE",
+                    cursor = changeCursor,
+                    size = size,
+                    sortKey = sortKey
+                )
+            }
+            val dutchDeferred = async {
+                useCases.getPiggyBankEntryUseCase(
+                    type = "DUTCHPAY",
+                    cursor = dutchCursor,
+                    size = size,
+                    sortKey = sortKey
+                )
+            }
+
+            val changeRes = changeDeferred.await()
+            val dutchRes = dutchDeferred.await()
+
+            val changeList = changeRes.getOrElse { emptyList() }
+            val dutchList = dutchRes.getOrElse { emptyList() }
+
+            val error = changeRes.exceptionOrNull()?.message
+                ?: dutchRes.exceptionOrNull()?.message
+
+            _uiState.update {
+                it.copy(
+                    changeList = changeList,
+                    dutchpayList = dutchList,
+                    isLoading = false,
+                    errorMessage = error
+                )
+            }
+        }
+    }
+
+    fun reloadEntriesByType(
+        type: String,
+        cursor: String? = null,
+        size: Int? = 20,
+        sortKey: String? = null
+    ) {
+        viewModelScope.launch {
+            val result = useCases.getPiggyBankEntryUseCase(type, cursor, size, null, null, sortKey)
+            result.onSuccess { list ->
+                _uiState.update { s ->
+                    when (type) {
+                        "CHANGE" -> s.copy(changeList = list)
+                        "DUTCHPAY" -> s.copy(dutchpayList = list)
+                        else -> s
+                    }
+                }
+            }.onFailure { e ->
+                _uiState.update { it.copy(errorMessage = e.message) }
+            }
+        }
+    }
+
+    fun setSelectedTab(tab: PiggyTab) {
+        _uiState.update { it.copy(selectedTab = tab) }
+    }
+}
+
+fun formatAmount(amount: Long): String {
+    val df = DecimalFormat("#,###")
+    return df.format(amount)
+}
+
+/** "YYYY-MM-DD" → "M.D" 로 포맷 (예: "2025-08-20" → "8.20") */
+fun formatMonthDay(date: String): String {
+    // date가 "YYYY-MM-DD" 라고 가정
+    return try {
+        val mm = date.substring(5, 7).trimStart('0')
+        val dd = date.substring(8, 10).trimStart('0')
+        "$mm.$dd"
+    } catch (_: Exception) {
+        date // 실패 시 원문 출력
+    }
 }

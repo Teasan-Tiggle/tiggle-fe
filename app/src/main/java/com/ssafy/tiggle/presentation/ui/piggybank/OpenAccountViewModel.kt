@@ -357,4 +357,52 @@ class OpenAccountViewModel @Inject constructor(
         }
     }
 
+    private var mode: OpenAccountMode = OpenAccountMode.FULL
+    fun setMode(m: OpenAccountMode) {
+        mode = m
+    }
+
+    // 기존 goToNextStep는 그대로 두고,
+    // INFO에서만 분기하는 전용 진입점 추가
+    fun nextFromInfo() {
+        if (mode == OpenAccountMode.SIMPLE) {
+            //바로 SUCCESS
+            _uiState.update { it.copy(openAccountStep = OpenAccountStep.SUCCESS) }
+            return
+        }
+        //기존 단계 진행
+        goToNextStep()
+    }
+
+    fun modifyPiggyBankInfo() {
+        val name = _uiState.value.piggyBankAccount.piggyBankName
+        val targetAmount = _uiState.value.piggyBankAccount.targetDonationAmount
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+
+            val result = useCases.setPiggyBankSettingUseCase(
+                name = name,
+                targetAmount = targetAmount
+            )
+
+            result.onSuccess { updated ->
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        openAccountStep = OpenAccountStep.SUCCESS,
+                        errorMessage = null
+                    )
+                }
+            }.onFailure { e ->
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = e.message ?: "저금통 정보 수정에 실패했습니다."
+                    )
+                }
+            }
+        }
+    }
+
 }

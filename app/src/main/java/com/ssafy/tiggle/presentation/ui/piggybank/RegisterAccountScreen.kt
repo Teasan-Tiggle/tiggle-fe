@@ -15,10 +15,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ButtonDefaults.outlinedButtonBorder
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -58,6 +56,7 @@ fun RegisterAccountScreen(
     modifier: Modifier = Modifier,
     viewModel: RegisterAccountViewModel = hiltViewModel(),
     onBackClick: () -> Unit = {},
+    isEdit: Boolean = false,
     onFinish: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -70,6 +69,7 @@ fun RegisterAccountScreen(
             viewModel.goToPreviousStep()
         }
     }
+    val title = if (isEdit) "계좌 수정" else "계좌 등록"
 
     when (uiState.registerAccountStep) {
         RegisterAccountStep.ACCOUNT -> {
@@ -78,7 +78,8 @@ fun RegisterAccountScreen(
                 onBackClick = handleTopBack,
                 onAccountChange = viewModel::updateAccountNum,
                 onConfirmClick = { viewModel.fetchAccountHolder() },
-                onDismissError = viewModel::clearError
+                onDismissError = viewModel::clearError,
+                title = title
             )
         }
 
@@ -86,7 +87,8 @@ fun RegisterAccountScreen(
             AccountInputSuccessScreen(
                 uiState = uiState,
                 onBackClick = handleTopBack,
-                onStartVerification = { viewModel.requestOneWon() }
+                onStartVerification = { viewModel.requestOneWon() },
+                title = title
             )
 
         }
@@ -95,7 +97,8 @@ fun RegisterAccountScreen(
             SendCodeScreen(
                 uiState = uiState,
                 onBackClick = handleTopBack,
-                onNextClick = { viewModel.goToNextStep() }
+                onNextClick = { viewModel.goToNextStep() },
+                title = title
             )
         }
 
@@ -105,7 +108,8 @@ fun RegisterAccountScreen(
                 onCodeChange = viewModel::updateCode,
                 onBackClick = handleTopBack,
                 onResendClick = { viewModel.resendOneWon() },
-                onNextClick = { viewModel.confirmCodeAndRegisterPrimary() }
+                onNextClick = { viewModel.confirmCodeAndRegisterPrimary() },
+                title = title
             )
         }
 
@@ -126,12 +130,14 @@ fun AccountInputScreen(
     onBackClick: () -> Unit,
     onAccountChange: (String) -> Unit,
     onConfirmClick: () -> Unit,
-    onDismissError: () -> Unit
+    onDismissError: () -> Unit,
+    title: String
 ) {
     TiggleScreenLayout(
         showBackButton = true,
-        title = "계좌 등록",
+        title = title,
         onBackClick = onBackClick,
+        enableScroll = true,
         bottomButton = {
             val keyboard = LocalSoftwareKeyboardController.current
             val buttonEnabled =
@@ -222,11 +228,13 @@ fun AccountInputSuccessScreen(
     uiState: RegisterAccountState,
     onBackClick: () -> Unit,
     onStartVerification: () -> Unit,
+    title: String
 ) {
     TiggleScreenLayout(
         showBackButton = true,
-        title = "계좌 등록",
+        title = title,
         onBackClick = onBackClick,
+        enableScroll = true,
         bottomButton = {
             TiggleButton(
                 text = if (uiState.isLoading) "요청 중..." else "1원 인증 시작",
@@ -345,13 +353,14 @@ fun SendCodeScreen(
     uiState: RegisterAccountState,
     onBackClick: () -> Unit,
     onNextClick: () -> Unit,
+    title: String
 ) {
     // 하단 버튼 영역 만큼의 여유 (필요에 따라 조정: 80~96dp 권장)
     val bottomBarPadding = 96.dp
 
     TiggleScreenLayout(
         showBackButton = true,
-        title = "계좌 등록",
+        title = title,
         onBackClick = onBackClick,
         bottomButton = {
             TiggleButton(
@@ -365,10 +374,7 @@ fun SendCodeScreen(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp)
-                // 하단 고정 버튼과 겹치지 않도록 여유 공간 확보
-                .padding(bottom = bottomBarPadding),
+                .padding(horizontal = 20.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
@@ -477,6 +483,7 @@ fun CertificationScreen(
     onCodeChange: (String) -> Unit,
     onResendClick: () -> Unit,
     onNextClick: () -> Unit,
+    title: String
 ) {
     val code = uiState.registerAccount.code
     val error = uiState.registerAccount.codeError
@@ -484,7 +491,7 @@ fun CertificationScreen(
 
     TiggleScreenLayout(
         showBackButton = true,
-        title = "계좌 등록",
+        title = title,
         onBackClick = onBackClick,
         bottomButton = {
             val enabled = uiState.registerAccount.code.length == 4 &&
@@ -498,9 +505,7 @@ fun CertificationScreen(
     ) {
 
         Column(
-            modifier = Modifier
-                .padding(20.dp)
-                .verticalScroll(rememberScrollState()),
+            modifier = Modifier.padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
@@ -679,9 +684,7 @@ fun RegisterSuccessScreen(
         }
     ) {
         Column(
-            modifier = Modifier
-                .padding(20.dp)
-                .verticalScroll(rememberScrollState()),
+            modifier = Modifier.padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
@@ -773,7 +776,8 @@ fun AccountInputPreview() {
         onBackClick = {},
         onAccountChange = {},
         onConfirmClick = {},
-        onDismissError = {}
+        onDismissError = {},
+        title = ""
     )
 }
 
@@ -790,7 +794,8 @@ fun AccountInputSuccessPreview() {
             )
         ),
         onBackClick = {},
-        onStartVerification = {}
+        onStartVerification = {},
+        title = ""
     )
 }
 
@@ -803,7 +808,8 @@ fun PreviewOneWonTransferScreen() {
             registerAccount = RegisterAccount(accountNum = "1234567890")
         ),
         onBackClick = {},
-        onNextClick = {}
+        onNextClick = {},
+        title = ""
     )
 }
 
@@ -823,7 +829,8 @@ fun PreviewCertificationScreen_Success() {
         onBackClick = {},
         onCodeChange = {},
         onResendClick = {},
-        onNextClick = {}
+        onNextClick = {},
+        title = ""
     )
 }
 

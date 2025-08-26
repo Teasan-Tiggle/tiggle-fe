@@ -1,6 +1,8 @@
 package com.ssafy.tiggle.presentation.ui.components
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -24,33 +26,38 @@ import androidx.compose.ui.unit.sp
 fun TiggleHeader(
     title: String? = null,
     showBackButton: Boolean = true,
-    onBackClick: () -> Unit = {}
+    onBackClick: () -> Unit = {},
+    actions: (@Composable RowScope.() -> Unit)? = null
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 16.dp),
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        if (showBackButton) {
-            IconButton(onClick = onBackClick) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "뒤로가기",
-                    tint = Color.Black
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            if (showBackButton) {
+                IconButton(onClick = onBackClick) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "뒤로가기",
+                        tint = Color.Black
+                    )
+                }
+            }
+
+            title?.let {
+                Text(
+                    text = it,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color.Black,
+                    modifier = Modifier.padding(start = if (showBackButton) 8.dp else 16.dp)
                 )
             }
         }
-
-        title?.let {
-            Text(
-                text = it,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Medium,
-                color = Color.Black,
-                modifier = Modifier.padding(start = if (showBackButton) 8.dp else 16.dp)
-            )
-        }
+        Row{actions?.invoke(this)}
     }
 }
 

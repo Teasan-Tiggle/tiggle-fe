@@ -13,11 +13,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -75,6 +73,11 @@ fun CreateDutchPayScreen(
         },
         onBackClick = {
             if (uiState.step == CreateDutchPayStep.PICK_USERS) onBackClick() else viewModel.goPrev()
+        },
+        enableScroll = when (uiState.step) {
+            CreateDutchPayStep.PICK_USERS -> false
+            CreateDutchPayStep.INPUT_AMOUNT -> true
+            CreateDutchPayStep.COMPLETE -> true
         },
         bottomButton = {
             TiggleButton(
@@ -161,19 +164,13 @@ fun DutchPayPickUsersContent(
     selectedUserIds: Set<Long>,
     onToggleUser: (Long) -> Unit
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(top = 12.dp)
-    ) {
-        Text("함께 결제할 유저를 선택하세요", style = AppTypography.bodyLarge)
-        Spacer(Modifier.height(12.dp))
-        UserPicker(
-            users = users,
-            selectedUserIds = selectedUserIds,
-            onToggleUser = onToggleUser
-        )
-    }
+    Text("함께 결제할 유저를 선택하세요", style = AppTypography.bodyLarge)
+    Spacer(Modifier.height(12.dp))
+    UserPicker(
+        users = users,
+        selectedUserIds = selectedUserIds,
+        onToggleUser = onToggleUser
+    )
 }
 
 @Composable
@@ -192,7 +189,6 @@ fun DutchPayInputAmountContent(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
             .padding(top = 12.dp)
     ) {
         // 선택한 친구 섹션
@@ -340,7 +336,6 @@ fun DutchPayCompleteContent(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {

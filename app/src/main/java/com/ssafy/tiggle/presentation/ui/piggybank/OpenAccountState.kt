@@ -11,7 +11,8 @@ data class OpenAccountState(
 
     // 약관 동의
     val termsData: TermsData = TermsData(),
-)
+
+    )
 
 /**
  * 약관 동의 데이터
@@ -31,3 +32,4 @@ data class TermsData(
         get() = serviceTerms && privacyPolicy && financeTerms && marketingOptional
 }
 
+enum class OpenAccountMode { FULL, SIMPLE }
