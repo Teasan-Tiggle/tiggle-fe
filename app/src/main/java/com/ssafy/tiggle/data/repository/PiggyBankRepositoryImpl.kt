@@ -1,19 +1,24 @@
 package com.ssafy.tiggle.data.repository
 
 import com.ssafy.tiggle.data.datasource.remote.PiggyBankApiService
+import com.ssafy.tiggle.data.model.BaseResponse
 import com.ssafy.tiggle.data.model.piggybank.request.CreatePiggyBankRequestDto
+import com.ssafy.tiggle.data.model.piggybank.request.PiggyBankEntriesRequestDto
 import com.ssafy.tiggle.data.model.piggybank.request.PiggyBankSettingRequestDto
 import com.ssafy.tiggle.data.model.piggybank.request.PrimaryAccountRequestDto
 import com.ssafy.tiggle.data.model.piggybank.request.SendSMSRequestDto
 import com.ssafy.tiggle.data.model.piggybank.request.VerificationCheckRequestDto
 import com.ssafy.tiggle.data.model.piggybank.request.VerificationRequestDto
 import com.ssafy.tiggle.data.model.piggybank.request.VerifySMSRequestDto
+import com.ssafy.tiggle.data.model.piggybank.response.PiggyBankEntriesResponseDto
 import com.ssafy.tiggle.data.model.piggybank.response.VerifySMSResponseDto
 import com.ssafy.tiggle.data.model.piggybank.response.toDomain
 import com.ssafy.tiggle.domain.entity.piggybank.AccountHolder
 import com.ssafy.tiggle.domain.entity.piggybank.MainAccount
+import com.ssafy.tiggle.domain.entity.piggybank.MainAccountDetail
 import com.ssafy.tiggle.domain.entity.piggybank.PiggyBank
 import com.ssafy.tiggle.domain.entity.piggybank.PiggyBankAccount
+import com.ssafy.tiggle.domain.entity.piggybank.PiggyBankEntry
 import com.ssafy.tiggle.domain.repository.PiggyBankRepository
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -218,6 +223,59 @@ class PiggyBankRepositoryImpl @Inject constructor(
                 Result.success(response.data.toDomain())
             } else {
                 Result.failure(Exception(response.message ?: "카테고리 설정에 실패했습니다."))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getTransactions(
+        accountNo: String,
+        cursor: String?
+    ): Result<MainAccountDetail> {
+        return try {
+            // size, sort 기본값은 스웨거 기본(20, DESC)에 맞춤
+            val response = piggyBankApiService.getTransactions(
+                accountNo = accountNo,
+                cursor = cursor,
+                size = 20,
+                sort = "DESC"
+            )
+
+            if (response.result && response.data != null) {
+                Result.success(response.data.toDomain())
+            } else {
+                Result.failure(Exception(response.message ?: "거래내역 조회에 실패했습니다."))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getPiggyBankEntries(
+        type: String,
+        cursor: String?,
+        size: Int?,
+        from: String?,
+        to: String?,
+        sortKey: String?
+    ): Result<List<PiggyBankEntry>> {
+        return try {
+            val request = PiggyBankEntriesRequestDto(
+                type = type,
+                cursor = cursor,
+                size = size,
+                from = from,
+                to = to,
+                sortKey = sortKey
+            )
+            val response: BaseResponse<PiggyBankEntriesResponseDto> =
+                piggyBankApiService.getPiggyBankEntries(request)
+            if (response.result && response.data != null) {
+                Result.success(response.data.toDomain())
+            } else {
+                Result.failure(Exception(response.message ?: "저금 기록 조회에 실패했습니다."))
+
             }
         } catch (e: Exception) {
             Result.failure(e)

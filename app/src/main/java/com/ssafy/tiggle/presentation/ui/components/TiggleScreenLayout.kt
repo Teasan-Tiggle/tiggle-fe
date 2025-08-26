@@ -3,6 +3,8 @@ package com.ssafy.tiggle.presentation.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -30,7 +32,9 @@ fun TiggleScreenLayout(
     showBackButton: Boolean = true,
     onBackClick: () -> Unit = {},
     showLogo: Boolean = false,
+    topActions: (@Composable RowScope.() -> Unit)? = null,
     bottomButton: @Composable (() -> Unit)? = null,
+    contentPadding: PaddingValues = PaddingValues(horizontal = 32.dp),
     enableScroll: Boolean = true,
     content: @Composable () -> Unit
 ) {
@@ -42,57 +46,58 @@ fun TiggleScreenLayout(
             .background(Color.White)
             .imePadding() // imePadding이 키보드 높이만큼 패딩을 자동으로 추가해줍니다.
     ) {
-        // 헤더
-        if (showBackButton || title != null) {
-            TiggleHeader(
-                title = title,
-                showBackButton = showBackButton,
-                onBackClick = onBackClick
-            )
-        }
-
-        // 메인 콘텐츠
-        if (enableScroll) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .padding(horizontal = 32.dp)
-                    .verticalScroll(scrollState)
-            ) {
-                if (showLogo) {
-                    TiggleLogo()
-                }
-                content()
+        Column(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            // 헤더
+            if (showBackButton || title != null) {
+                TiggleHeader(
+                    title = title,
+                    showBackButton = showBackButton,
+                    onBackClick = onBackClick,
+                    actions = topActions
+                )
             }
-        } else {
-            // LazyColumn 등을 사용하는 화면을 위한 레이아웃
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .padding(horizontal = 32.dp)
-            ) {
-                if (showLogo) {
-                    Column {
+
+            // 메인 콘텐츠
+            if (enableScroll) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .padding(horizontal = 32.dp)
+                        .verticalScroll(scrollState)
+                ) {
+                    if (showLogo) {
                         TiggleLogo()
-                        content()
                     }
-                } else {
+                    content()
+                }
+            } else {
+                // 스크롤이 필요 없는 화면을 위한 레이아웃
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .padding(contentPadding)
+                ) {
+                    if (showLogo) {
+                        TiggleLogo()
+                    }
                     content()
                 }
             }
-        }
 
-        // 하단 버튼 (선택적)
-        bottomButton?.let {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 32.dp)
-                    .padding(bottom = 32.dp)
-            ) {
-                it()
+            // 하단 버튼 (선택적)
+            bottomButton?.let {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 32.dp)
+                        .padding(bottom = 32.dp)
+                ) {
+                    it()
+                }
             }
         }
     }
@@ -130,6 +135,7 @@ private fun TiggleScreenLayoutPreview() {
     }
 }
 
+
 @Preview(showBackground = true)
 @Composable
 private fun TiggleScreenLayoutWithLogoPreview() {
@@ -150,4 +156,5 @@ private fun TiggleScreenLayoutWithLogoPreview() {
             fontSize = 16.sp
         )
     }
+
 }

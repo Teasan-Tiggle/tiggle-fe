@@ -8,9 +8,9 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -24,6 +24,8 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -42,6 +44,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.ssafy.tiggle.R
 import com.ssafy.tiggle.core.utils.Formatter
 import com.ssafy.tiggle.presentation.ui.components.TiggleScreenLayout
@@ -58,111 +63,133 @@ fun PiggyBankScreen(
     onOpenAccountClick: () -> Unit = {},
     onRegisterAccountClick: () -> Unit = {},
     onStartDutchPayClick: () -> Unit = {},
-    onBackClick: () -> Unit = {},
+    onAccountClick: (String) -> Unit = {},
+    onShowPiggyBankDetailClick: () -> Unit = {},
+    onEditLinkedAccountClick: () -> Unit = {},
     viewModel: PiggyBankViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    // 최초 1회 로드
+    LaunchedEffect(Unit) {
+        viewModel.setPiggyBankAccount()
+        viewModel.setMainAccount()
+    }
+
+    //다시 화면으로 돌아왔을 때(ON_RESUME) 갱신
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.setPiggyBankAccount()
+                viewModel.setMainAccount()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 
     TiggleScreenLayout(
         showBackButton = false,
-        showLogo = false
+        showLogo = false,
+        enableScroll = true,
+        contentPadding = PaddingValues(horizontal = 12.dp)
     ) {
-        Column(
-            modifier = modifier
-                .fillMaxSize()
-                .padding(horizontal = 12.dp)
-        ) {
-            Spacer(Modifier.height(30.dp))
-            Text(
-                text = "티끌 저금통",
-                color = Color.Black,
-                fontSize = 22.sp,
-                style = AppTypography.headlineLarge
+        Spacer(Modifier.height(30.dp))
+        Text(
+            text = "티끌 저금통",
+            color = Color.Black,
+            fontSize = 22.sp,
+            style = AppTypography.headlineLarge
+        )
+        Spacer(Modifier.height(6.dp))
+        Text(
+            text = "작은 돈도 모으면 큰 힘이 됩니다",
+            color = TiggleGrayText,
+            fontSize = 13.sp,
+            style = AppTypography.bodySmall
+        )
+
+        Spacer(Modifier.height(50.dp))
+        Spacer(Modifier.height(50.dp))
+
+        if (uiState.hasPiggyBank) {
+            TodaySavingBanner(uiState = uiState, onClick = onShowPiggyBankDetailClick)
+        } else {
+            DottedActionCard(
+                title = "티끌 저금통 개설",
+                desc = "계좌를 개설해\n티끌 저금통을 채워보세요!",
+                onClick = onOpenAccountClick
             )
-            Spacer(Modifier.height(6.dp))
-            Text(
-                text = "작은 돈도 모으면 큰 힘이 됩니다",
-                color = TiggleGrayText,
-                fontSize = 13.sp,
-                style = AppTypography.bodySmall
+        }
+
+        Spacer(Modifier.height(10.dp))
+
+        if (uiState.hasLinkedAccount) {
+            AccountCard(
+                uiState = uiState, onClick = { accountNo ->
+                    onAccountClick(accountNo)
+                },
+                onEditClick = { onEditLinkedAccountClick() })
+        } else {
+            DottedActionCard(
+                title = "내 계좌 등록",
+                desc = "나의 계좌를 등록하면\n티끌 저금통에 잔돈이 자동으로 기부됩니다.",
+                onClick = onRegisterAccountClick
             )
-            Spacer(Modifier.height(50.dp))
+        }
 
-            //계좌 존재 여부에 따라
-            if (uiState.hasPiggyBank) {
-                TodaySavingBanner(
-                    uiState = uiState
-                )
-            } else {
-                DottedActionCard(
-                    title = "티끌 저금통 개설",
-                    desc = "계좌를 개설해\n티끌 저금통을 채워보세요!",
-                    onClick = onOpenAccountClick
-                )
-            }
-            Spacer(Modifier.height(10.dp))
-            if (uiState.hasLinkedAccount) {
-                AccountCard(
-                    uiState = uiState
-                )
-            } else {
-                DottedActionCard(
-                    title = "내 계좌 등록",
-                    desc = "나의 계좌를 등록하면\n티끌 저금통에 잔돈이 자동으로 기부됩니다.",
-                    onClick = onRegisterAccountClick
-                )
-            }
-            Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(16.dp))
 
-            if (uiState.hasPiggyBank) {
-                DutchButtonsRow(
-                    onStatus = {},
-                    onStart = onStartDutchPayClick
-                )
-            }
-            Spacer(Modifier.height(25.dp))
-
-            // 스위치 섹션
-            TiggleSwitchRow(
-                title = "저금통 자동 기부",
-                subtitle = "일정 금액의 티끌이 쌓이면 기부 단체에 자동으로 기부됩니다.",
-                checked = uiState.piggyBank.autoDonation,
-                onCheckedChange = viewModel::onToggleAutoDonation
+        if (uiState.hasPiggyBank) {
+            DutchButtonsRow(
+                onStatus = {},
+                onStart = onStartDutchPayClick
             )
+        }
 
-            HorizontalDivider(
-                color = TiggleGray,
-                thickness = 0.5.dp,
-                modifier = Modifier.padding(10.dp)
+        Spacer(Modifier.height(20.dp))
+
+        TiggleSwitchRow(
+            title = "저금통 자동 기부",
+            subtitle = "일정 금액의 티끌이 쌓이면 \n기부 단체에 자동으로 기부됩니다.",
+            checked = uiState.piggyBank.autoDonation,
+            onCheckedChange = viewModel::onToggleAutoDonation
+        )
+
+        HorizontalDivider(
+            color = TiggleGray,
+            thickness = 0.5.dp,
+            modifier = Modifier.padding(10.dp)
+        )
+
+        TiggleSwitchRow(
+            title = "잔돈 자동 저금",
+            subtitle = "매일 자정에 1,000원 미만 잔돈을 자동으로 저금합니다.",
+            checked = uiState.piggyBank.autoSaving,
+            onCheckedChange = viewModel::onToggleAutoSaving
+        )
+
+        HorizontalDivider(
+            color = TiggleGray,
+            thickness = 0.5.dp,
+            modifier = Modifier.padding(10.dp)
+        )
+
+        Spacer(Modifier.height(24.dp))
+
+        if (uiState.showEsgCategorySheet) {
+            EsgCategoryBottomSheet(
+                show = uiState.showEsgCategorySheet,
+                selectedId = uiState.piggyBank.esgCategory?.id,
+                onPick = viewModel::onPickEsgCategory,
+                onConfirm = viewModel::onConfirmAutoDonation,
+                onDismiss = viewModel::onDismissEsgSheet
             )
-
-            // 스위치 섹션 2
-            TiggleSwitchRow(
-                title = "잔돈 자동 저금",
-                subtitle = "매일 자정에 1,000원 미만 잔돈을 자동으로 저금합니다.",
-                checked = uiState.piggyBank.autoSaving,
-                onCheckedChange = viewModel::onToggleAutoSaving
-            )
-
-            if (uiState.showEsgCategorySheet) {
-                EsgCategoryBottomSheet(   // <- 네가 만든 컴포넌트 이름
-                    show = uiState.showEsgCategorySheet,
-                    selectedId = uiState.piggyBank.esgCategory?.id,
-                    onPick = viewModel::onPickEsgCategory,   // 카테고리 탭
-                    onConfirm = viewModel::onConfirmAutoDonation, // 확인 버튼
-                    onDismiss = viewModel::onDismissEsgSheet   // 바깥 터치/뒤로
-                )
-            }
-            HorizontalDivider(
-                color = TiggleGray,
-                thickness = 0.5.dp,
-                modifier = Modifier.padding(10.dp)
-            )
-
-            Spacer(Modifier.height(24.dp))
         }
     }
 }
+
 
 @Composable
 private fun DottedActionCard(
@@ -248,7 +275,7 @@ private fun PlusIcon(color: Color) {
 }
 
 @Composable
-private fun TodaySavingBanner(uiState: PiggyBankState) {
+private fun TodaySavingBanner(uiState: PiggyBankState, onClick: () -> Unit) {
     val radius = 18.dp
     Box(
         modifier = Modifier
@@ -265,6 +292,7 @@ private fun TodaySavingBanner(uiState: PiggyBankState) {
                 )
             )
             .padding(horizontal = 20.dp, vertical = 18.dp)
+            .clickable { onClick() }
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
@@ -305,7 +333,11 @@ private fun TodaySavingBanner(uiState: PiggyBankState) {
 }
 
 @Composable
-private fun AccountCard(uiState: PiggyBankState) {
+private fun AccountCard(
+    uiState: PiggyBankState,
+    onClick: (String) -> Unit,
+    onEditClick: () -> Unit
+) {
     val radius = 14.dp
     Column(
         modifier = Modifier
@@ -315,6 +347,7 @@ private fun AccountCard(uiState: PiggyBankState) {
             .background(Color.White)
             .border(1.dp, Color(0x11000000), RoundedCornerShape(radius))
             .padding(16.dp)
+            .clickable { onClick(uiState.mainAccount.accountNo) }
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
@@ -345,16 +378,18 @@ private fun AccountCard(uiState: PiggyBankState) {
                 Image(
                     painter = painterResource(id = R.drawable.linked_card_option),
                     contentDescription = "옵션 버튼",
-                    Modifier.size(20.dp)
+                    Modifier
+                        .size(20.dp)
+                        .clickable { onEditClick() }
                 )
             }
         }
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(17.dp))
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.End) {
             Text("잔액", color = TiggleGrayText, style = AppTypography.bodySmall)
             Spacer(Modifier.height(5.dp))
             Text(
-                "${uiState.mainAccount.balance}원",
+                "${formatAmount(uiState.mainAccount.balance.toLong())}원",
                 color = Color.Black,
                 fontSize = 22.sp,
                 fontWeight = FontWeight.SemiBold

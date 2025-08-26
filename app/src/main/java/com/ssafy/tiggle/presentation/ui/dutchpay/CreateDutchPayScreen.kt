@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
@@ -165,19 +164,13 @@ fun DutchPayPickUsersContent(
     selectedUserIds: Set<Long>,
     onToggleUser: (Long) -> Unit
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(top = 12.dp)
-    ) {
-        Text("함께 결제할 유저를 선택하세요", style = AppTypography.bodyLarge)
-        Spacer(Modifier.height(12.dp))
-        UserPicker(
-            users = users,
-            selectedUserIds = selectedUserIds,
-            onToggleUser = onToggleUser
-        )
-    }
+    Text("함께 결제할 유저를 선택하세요", style = AppTypography.bodyLarge)
+    Spacer(Modifier.height(12.dp))
+    UserPicker(
+        users = users,
+        selectedUserIds = selectedUserIds,
+        onToggleUser = onToggleUser
+    )
 }
 
 @Composable

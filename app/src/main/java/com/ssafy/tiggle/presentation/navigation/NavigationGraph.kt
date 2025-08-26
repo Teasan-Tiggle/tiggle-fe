@@ -21,7 +21,10 @@ import com.ssafy.tiggle.presentation.ui.donation.DonationStatusScreen
 import com.ssafy.tiggle.presentation.ui.dutchpay.CreateDutchPayScreen
 import com.ssafy.tiggle.presentation.ui.dutchpay.DutchpayRecieveScreen
 import com.ssafy.tiggle.presentation.ui.growth.GrowthScreen
+import com.ssafy.tiggle.presentation.ui.piggybank.MainAccountDetailScreen
+import com.ssafy.tiggle.presentation.ui.piggybank.OpenAccountMode
 import com.ssafy.tiggle.presentation.ui.piggybank.OpenAccountScreen
+import com.ssafy.tiggle.presentation.ui.piggybank.PiggyBankDetailRoute
 import com.ssafy.tiggle.presentation.ui.piggybank.PiggyBankScreen
 import com.ssafy.tiggle.presentation.ui.piggybank.RegisterAccountScreen
 import com.ssafy.tiggle.presentation.ui.shorts.ShortsScreen
@@ -129,14 +132,23 @@ fun NavigationGraph(
                     is BottomScreen.PiggyBank -> NavEntry(key) {
                         PiggyBankScreen(
                             onOpenAccountClick = {
-                                navBackStack.add(Screen.OpenAccount)
+                                navBackStack.add(Screen.OpenAccount())
                             },
                             onRegisterAccountClick = {
-                                navBackStack.add(Screen.RegisterAccount)
+                                navBackStack.add(Screen.RegisterAccount(isEdit = false))
                             },
                             onStartDutchPayClick = {
                                 navBackStack.add(Screen.CreateDutchPay)
                             },
+                            onAccountClick = { accountNo ->
+                                navBackStack.add(Screen.MainAccountDetail(accountNo))
+                            },
+                            onShowPiggyBankDetailClick = {
+                                navBackStack.add(Screen.PiggyBankDetail)
+                            },
+                            onEditLinkedAccountClick = {
+                                navBackStack.add(Screen.RegisterAccount(isEdit = true))
+                            }
                             onBackClick = {
                                 navBackStack.removeLastOrNull()
                             }
@@ -173,9 +185,22 @@ fun NavigationGraph(
                         DutchpayRecieveScreen(dutchPayId = key.dutchPayId)
                     }
 
+                    is Screen.MainAccountDetail -> NavEntry(key) {
+                        MainAccountDetailScreen(
+                            accountNo = key.accountNo,
+                        )
+                    }
+
                     is Screen.DonationHistory -> NavEntry(key) {
                         DonationHistoryScreen(
                             onBackClick = { navBackStack.removeLastOrNull() }
+                        )
+                    }
+
+                    is Screen.PiggyBankDetail -> NavEntry(key) {
+                        PiggyBankDetailRoute(
+                            onBackClick = { navBackStack.removeLastOrNull() },
+                            onMore = { navBackStack.add(Screen.OpenAccount(OpenAccountMode.SIMPLE)) }
                         )
                     }
 
