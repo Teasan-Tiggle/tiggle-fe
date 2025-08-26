@@ -17,7 +17,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -75,6 +74,11 @@ fun CreateDutchPayScreen(
         },
         onBackClick = {
             if (uiState.step == CreateDutchPayStep.PICK_USERS) onBackClick() else viewModel.goPrev()
+        },
+        enableScroll = when (uiState.step) {
+            CreateDutchPayStep.PICK_USERS -> false
+            CreateDutchPayStep.INPUT_AMOUNT -> true
+            CreateDutchPayStep.COMPLETE -> true
         },
         bottomButton = {
             TiggleButton(
@@ -192,7 +196,6 @@ fun DutchPayInputAmountContent(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
             .padding(top = 12.dp)
     ) {
         // 선택한 친구 섹션
@@ -340,7 +343,6 @@ fun DutchPayCompleteContent(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
