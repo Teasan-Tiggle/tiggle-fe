@@ -8,7 +8,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -21,16 +20,16 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.platform.LocalFocusManager
 import com.ssafy.tiggle.presentation.ui.theme.TiggleBlue
 import com.ssafy.tiggle.presentation.ui.theme.TiggleGrayLight
 import com.ssafy.tiggle.presentation.ui.theme.TiggleGrayText
@@ -46,10 +45,11 @@ fun TiggleTextField(
     placeholder: String = "",
     isPassword: Boolean = false,
     keyboardType: KeyboardType = KeyboardType.Text,
+    maxLines: Int = 1,
     modifier: Modifier = Modifier,
     isError: Boolean = false,
     errorMessage: String? = null,
-    maxLines: Int = 1,
+    imeAction: ImeAction = if (maxLines == 1) ImeAction.Next else ImeAction.Done,
     minLines: Int = 1
 ) {
     var isPasswordVisible by remember { mutableStateOf(false) }
@@ -106,7 +106,7 @@ fun TiggleTextField(
             } else null,
             keyboardOptions = KeyboardOptions(
                 keyboardType = keyboardType,
-                imeAction = if (maxLines == 1) ImeAction.Next else ImeAction.Done
+                imeAction = imeAction
             ),
             singleLine = maxLines == 1,
             maxLines = maxLines,
@@ -136,7 +136,7 @@ fun TiggleTextField(
 @Composable
 private fun TiggleTextFieldPreview() {
     var text by remember { mutableStateOf("") }
-    
+
     TiggleTextField(
         value = text,
         onValueChange = { text = it },
@@ -150,7 +150,7 @@ private fun TiggleTextFieldPreview() {
 @Composable
 private fun TiggleTextFieldPasswordPreview() {
     var password by remember { mutableStateOf("") }
-    
+
     TiggleTextField(
         value = password,
         onValueChange = { password = it },
@@ -164,7 +164,7 @@ private fun TiggleTextFieldPasswordPreview() {
 @Composable
 private fun TiggleTextFieldErrorPreview() {
     var text by remember { mutableStateOf("invalid@") }
-    
+
     TiggleTextField(
         value = text,
         onValueChange = { text = it },

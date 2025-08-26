@@ -1,6 +1,5 @@
 package com.ssafy.tiggle.presentation.ui.auth.login
 
-import android.annotation.SuppressLint
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -17,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
@@ -64,9 +64,9 @@ fun LoginScreen(
                 label = "이메일",
                 placeholder = "이메일을 입력해주세요",
                 keyboardType = KeyboardType.Email,
+                modifier = Modifier.fillMaxWidth(),
                 isError = uiState.emailError != null,
-                errorMessage = uiState.emailError,
-                modifier = Modifier.fillMaxWidth()
+                errorMessage = uiState.emailError
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -77,9 +77,10 @@ fun LoginScreen(
                 label = "비밀번호",
                 placeholder = "비밀번호를 입력해주세요",
                 isPassword = true,
+                modifier = Modifier.fillMaxWidth(),
                 isError = uiState.passwordError != null,
                 errorMessage = uiState.passwordError,
-                modifier = Modifier.fillMaxWidth()
+                imeAction = ImeAction.Done
             )
 
             // 비밀번호 찾기
