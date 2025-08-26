@@ -146,6 +146,7 @@ fun AccountInfoInputScreen(
     TiggleScreenLayout(
         showBackButton = true,
         onBackClick = onBackClick,
+        enableScroll = true,
         bottomButton = {
             val nextEnabled =
                 uiState.piggyBankAccount.targetDonationAmount.toString()
@@ -360,6 +361,7 @@ private fun TermsAgreementScreen(
     TiggleScreenLayout(
         showBackButton = true,
         onBackClick = onBackClick,
+        enableScroll = true,
         bottomButton = {
             TiggleButton(
                 text = "동의하고 계속",
@@ -490,6 +492,7 @@ fun CertificateScreen(
     TiggleScreenLayout(
         showBackButton = true,
         onBackClick = onBackClick,
+        enableScroll = true,
         bottomButton = {
             TiggleButton(
                 text = "인증하기",
@@ -607,6 +610,7 @@ fun CodeScreen(
     TiggleScreenLayout(
         showBackButton = true,
         onBackClick = onBackClick,
+        enableScroll = true,
         bottomButton = {
             TiggleButton(
                 text = "인증 완료",
@@ -808,6 +812,7 @@ private fun SuccessScreen(
 ) {
     TiggleScreenLayout(
         showBackButton = false,
+        enableScroll = true,
         bottomButton = {
             TiggleButton(
                 text = "확인",

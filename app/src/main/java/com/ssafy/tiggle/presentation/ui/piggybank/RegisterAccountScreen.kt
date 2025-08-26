@@ -15,10 +15,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ButtonDefaults.outlinedButtonBorder
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -139,6 +137,7 @@ fun AccountInputScreen(
         showBackButton = true,
         title = title,
         onBackClick = onBackClick,
+        enableScroll = true,
         bottomButton = {
             val keyboard = LocalSoftwareKeyboardController.current
             val buttonEnabled =
@@ -235,6 +234,7 @@ fun AccountInputSuccessScreen(
         showBackButton = true,
         title = title,
         onBackClick = onBackClick,
+        enableScroll = true,
         bottomButton = {
             TiggleButton(
                 text = if (uiState.isLoading) "요청 중..." else "1원 인증 시작",
@@ -374,10 +374,7 @@ fun SendCodeScreen(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp)
-                // 하단 고정 버튼과 겹치지 않도록 여유 공간 확보
-                .padding(bottom = bottomBarPadding),
+                .padding(horizontal = 20.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
@@ -508,9 +505,7 @@ fun CertificationScreen(
     ) {
 
         Column(
-            modifier = Modifier
-                .padding(20.dp)
-                .verticalScroll(rememberScrollState()),
+            modifier = Modifier.padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
@@ -689,9 +684,7 @@ fun RegisterSuccessScreen(
         }
     ) {
         Column(
-            modifier = Modifier
-                .padding(20.dp)
-                .verticalScroll(rememberScrollState()),
+            modifier = Modifier.padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 

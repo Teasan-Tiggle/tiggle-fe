@@ -71,6 +71,7 @@ fun PiggyBankDetailsScreen(
         title = "오늘 모인 티끌",
         onBackClick = onBack,
         contentPadding = PaddingValues(0.dp),
+        enableScroll = false,
         topActions = {
             Row(horizontalArrangement = Arrangement.End) {
                 Image(

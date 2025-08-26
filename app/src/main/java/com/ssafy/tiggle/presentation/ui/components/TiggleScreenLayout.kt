@@ -59,48 +59,45 @@ fun TiggleScreenLayout(
                 )
             }
 
-        // 메인 콘텐츠
-        if (enableScroll) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .padding(horizontal = 32.dp)
-                    .verticalScroll(scrollState)
-            ) {
-                if (showLogo) {
-                    TiggleLogo()
-                }
-                content()
-            }
-        } else {
-            // LazyColumn 등을 사용하는 화면을 위한 레이아웃
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .padding(contentPadding)
-            ) {
-                if (showLogo) {
-                    Column {
+            // 메인 콘텐츠
+            if (enableScroll) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .padding(horizontal = 32.dp)
+                        .verticalScroll(scrollState)
+                ) {
+                    if (showLogo) {
                         TiggleLogo()
-                        content()
                     }
-                } else {
+                    content()
+                }
+            } else {
+                // 스크롤이 필요 없는 화면을 위한 레이아웃
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .padding(contentPadding)
+                ) {
+                    if (showLogo) {
+                        TiggleLogo()
+                    }
                     content()
                 }
             }
-        }
 
-        // 하단 버튼 (선택적)
-        bottomButton?.let {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 32.dp)
-                    .padding(bottom = 32.dp)
-            ) {
-                it()
+            // 하단 버튼 (선택적)
+            bottomButton?.let {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 32.dp)
+                        .padding(bottom = 32.dp)
+                ) {
+                    it()
+                }
             }
         }
     }
@@ -138,6 +135,7 @@ private fun TiggleScreenLayoutPreview() {
     }
 }
 
+
 @Preview(showBackground = true)
 @Composable
 private fun TiggleScreenLayoutWithLogoPreview() {
@@ -158,4 +156,5 @@ private fun TiggleScreenLayoutWithLogoPreview() {
             fontSize = 16.sp
         )
     }
+
 }

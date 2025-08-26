@@ -49,7 +49,8 @@ fun MainAccountDetailScreen(
         showBackButton = true,
         title = "오늘 모인 티끌",
         onBackClick = onBackClick,
-        contentPadding = PaddingValues(0.dp)
+        contentPadding = PaddingValues(0.dp),
+        enableScroll = false
     ) {
         Column(
             modifier = Modifier
