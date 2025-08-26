@@ -67,6 +67,7 @@ fun PiggyBankScreen(
     onStartDutchPayClick: () -> Unit = {},
     onAccountClick: (String) -> Unit = {},
     onShowPiggyBankDetailClick: () -> Unit = {},
+    onEditLinkedAccountClick: () -> Unit = {},
     viewModel: PiggyBankViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -135,9 +136,11 @@ fun PiggyBankScreen(
                 Spacer(Modifier.height(10.dp))
 
                 if (uiState.hasLinkedAccount) {
-                    AccountCard(uiState = uiState, onClick = { accountNo ->
-                        onAccountClick(accountNo)
-                    })
+                    AccountCard(
+                        uiState = uiState, onClick = { accountNo ->
+                            onAccountClick(accountNo)
+                        },
+                        onEditClick = { onEditLinkedAccountClick() })
                 } else {
                     DottedActionCard(
                         title = "내 계좌 등록",
@@ -342,7 +345,11 @@ private fun TodaySavingBanner(uiState: PiggyBankState, onClick: () -> Unit) {
 }
 
 @Composable
-private fun AccountCard(uiState: PiggyBankState, onClick: (String) -> Unit) {
+private fun AccountCard(
+    uiState: PiggyBankState,
+    onClick: (String) -> Unit,
+    onEditClick: () -> Unit
+) {
     val radius = 14.dp
     Column(
         modifier = Modifier
@@ -383,7 +390,9 @@ private fun AccountCard(uiState: PiggyBankState, onClick: (String) -> Unit) {
                 Image(
                     painter = painterResource(id = R.drawable.linked_card_option),
                     contentDescription = "옵션 버튼",
-                    Modifier.size(20.dp)
+                    Modifier
+                        .size(20.dp)
+                        .clickable { onEditClick() }
                 )
             }
         }

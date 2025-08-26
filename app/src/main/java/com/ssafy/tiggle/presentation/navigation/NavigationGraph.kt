@@ -84,7 +84,7 @@ fun NavigationGraph() {
                                 navBackStack.add(Screen.OpenAccount())
                             },
                             onRegisterAccountClick = {
-                                navBackStack.add(Screen.RegisterAccount)
+                                navBackStack.add(Screen.RegisterAccount(isEdit = false))
                             },
                             onStartDutchPayClick = {
                                 navBackStack.add(Screen.CreateDutchPay)
@@ -95,6 +95,9 @@ fun NavigationGraph() {
                             },
                             onShowPiggyBankDetailClick = {
                                 navBackStack.add(Screen.PiggyBankDetail)
+                            },
+                            onEditLinkedAccountClick = {
+                                navBackStack.add(Screen.RegisterAccount(isEdit = true))
                             }
                         )
                     }
@@ -111,6 +114,7 @@ fun NavigationGraph() {
 
                     is Screen.RegisterAccount -> NavEntry(key) {
                         RegisterAccountScreen(
+                            isEdit = key.isEdit,
                             onBackClick = { navBackStack.removeLastOrNull() },
                             onFinish = {
                                 navBackStack.removeLastOrNull()

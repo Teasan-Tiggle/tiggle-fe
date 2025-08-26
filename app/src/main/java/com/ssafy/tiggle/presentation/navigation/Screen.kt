@@ -32,7 +32,7 @@ sealed interface Screen : NavKey {
     data class OpenAccount(val mode: OpenAccountMode = OpenAccountMode.FULL) : Screen
 
     @Serializable
-    object RegisterAccount : Screen
+    data class RegisterAccount(val isEdit: Boolean = false) : Screen
 
     @Serializable
     object CreateDutchPay : Screen
