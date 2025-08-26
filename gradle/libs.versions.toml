@@ -1,17 +1,19 @@
 [versions]
 agp = "8.11.1"
+firebaseBom = "33.2.0"
 kotlin = "2.0.21"
 coreKtx = "1.16.0"
 junit = "4.13.2"
 junitVersion = "1.3.0"
 espressoCore = "3.7.0"
+kotlinxCoroutinesPlayServices = "1.7.3"
 lifecycleRuntimeKtx = "2.9.2"
 activityCompose = "1.10.1"
 composeBom = "2024.09.00"
 hilt = "2.48"
 hiltNavigationCompose = "1.2.0"
 lifecycleViewModelCompose = "2.8.7"
-navigationCompose = "2.8.1"
+media3Exoplayer = "1.2.1"
 retrofit = "2.9.0"
 retrofitGsonConverter = "2.9.0"
 okhttp = "4.12.0"
@@ -25,6 +27,13 @@ roomKtx = "2.7.2"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-media3-common = { module = "androidx.media3:media3-common", version.ref = "media3Exoplayer" }
+androidx-media3-datasource = { module = "androidx.media3:media3-datasource", version.ref = "media3Exoplayer" }
+androidx-media3-datasource-okhttp = { module = "androidx.media3:media3-datasource-okhttp", version.ref = "media3Exoplayer" }
+androidx-media3-exoplayer = { module = "androidx.media3:media3-exoplayer", version.ref = "media3Exoplayer" }
+androidx-media3-ui = { module = "androidx.media3:media3-ui", version.ref = "media3Exoplayer" }
+firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
+firebase-messaging-ktx = { module = "com.google.firebase:firebase-messaging-ktx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
@@ -54,6 +63,7 @@ androidx-navigation3-runtime = { module = "androidx.navigation3:navigation3-runt
 androidx-navigation3-ui = { module = "androidx.navigation3:navigation3-ui", version.ref = "navigation3Runtime" }
 androidx-lifecycle-viewmodel-navigation3-android = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-navigation3-android", version.ref = "lifecycleViewmodelNavigation3Android" }
 # Network
+kotlinx-coroutines-play-services = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version.ref = "kotlinxCoroutinesPlayServices" }
 retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
 retrofit-gson-converter = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "retrofitGsonConverter" }
 okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }

@@ -14,13 +14,17 @@ import androidx.navigation3.ui.NavDisplay
 import androidx.navigation3.ui.rememberSceneSetupNavEntryDecorator
 import com.ssafy.tiggle.presentation.ui.auth.login.LoginScreen
 import com.ssafy.tiggle.presentation.ui.auth.signup.SignUpScreen
+import com.ssafy.tiggle.presentation.ui.donation.DonationHistoryScreen
+import com.ssafy.tiggle.presentation.ui.donation.DonationStatusScreen
 import com.ssafy.tiggle.presentation.ui.dutchpay.CreateDutchPayScreen
 import com.ssafy.tiggle.presentation.ui.piggybank.MainAccountDetailScreen
 import com.ssafy.tiggle.presentation.ui.piggybank.OpenAccountMode
+import com.ssafy.tiggle.presentation.ui.growth.GrowthScreen
 import com.ssafy.tiggle.presentation.ui.piggybank.OpenAccountScreen
 import com.ssafy.tiggle.presentation.ui.piggybank.PiggyBankDetailRoute
 import com.ssafy.tiggle.presentation.ui.piggybank.PiggyBankScreen
 import com.ssafy.tiggle.presentation.ui.piggybank.RegisterAccountScreen
+import com.ssafy.tiggle.presentation.ui.shorts.ShortsScreen
 
 /**
  * 앱의 메인 네비게이션
@@ -32,7 +36,7 @@ fun NavigationGraph() {
 
     Scaffold(
         bottomBar = {
-            if (navBackStack.last() is BottomScreen)
+            if (navBackStack.last() is BottomScreen && navBackStack.last() != BottomScreen.Shorts)
                 BottomNavigation(navBackStack)
         }
     ) { innerPadding ->
@@ -71,7 +75,17 @@ fun NavigationGraph() {
                     }
 
                     is BottomScreen.Growth -> NavEntry(key) {
-                        GrowthScreen()
+                        GrowthScreen(
+                            onDonationHistoryClick = {
+                                navBackStack.add(Screen.DonationHistory)
+                            },
+                            onDonationStatusClick = {
+                                navBackStack.add(Screen.DonationStatus)
+                            },
+                            onDonationRankingClick = {
+                                // TODO: 기부 랭킹 화면 구현 시 추가
+                            }
+                        )
                     }
 
                     is BottomScreen.Shorts -> NavEntry(key) {
@@ -89,7 +103,6 @@ fun NavigationGraph() {
                             onStartDutchPayClick = {
                                 navBackStack.add(Screen.CreateDutchPay)
                             },
-
                             onAccountClick = { accountNo ->
                                 navBackStack.add(Screen.MainAccountDetail(accountNo))
                             },
@@ -99,6 +112,8 @@ fun NavigationGraph() {
                             onEditLinkedAccountClick = {
                                 navBackStack.add(Screen.RegisterAccount(isEdit = true))
                             }
+                            onBackClick = {
+                                navBackStack.removeLastOrNull()
                         )
                     }
 
@@ -132,6 +147,8 @@ fun NavigationGraph() {
                     is Screen.MainAccountDetail -> NavEntry(key) {
                         MainAccountDetailScreen(
                             accountNo = key.accountNo,
+                    is Screen.DonationHistory -> NavEntry(key) {
+                        DonationHistoryScreen(
                             onBackClick = { navBackStack.removeLastOrNull() }
                         )
                     }
@@ -140,6 +157,9 @@ fun NavigationGraph() {
                         PiggyBankDetailRoute(
                             onBackClick = { navBackStack.removeLastOrNull() },
                             onMore = { navBackStack.add(Screen.OpenAccount(OpenAccountMode.SIMPLE)) }
+                    is Screen.DonationStatus -> NavEntry(key) {
+                        DonationStatusScreen(
+                            onBackClick = { navBackStack.removeLastOrNull() }
                         )
                     }
 
@@ -156,14 +176,6 @@ fun NavigationGraph() {
  * 메인 화면의 바텀 네비게이션
  */
 // 임시 화면들
-@Composable
-private fun GrowthScreen() {
-    Text("성장")
-}
 
-@Composable
-private fun ShortsScreen() {
-    Text("숏폼")
-}
 
 

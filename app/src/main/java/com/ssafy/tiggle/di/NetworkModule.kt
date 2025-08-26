@@ -5,6 +5,7 @@ import com.ssafy.tiggle.core.network.LoggingCookieJar
 import com.ssafy.tiggle.core.network.PrettyHttpLoggingInterceptor
 import com.ssafy.tiggle.data.datasource.local.AuthDataSource
 import com.ssafy.tiggle.data.datasource.remote.AuthApiService
+import com.ssafy.tiggle.data.datasource.remote.DonationApiService
 import com.ssafy.tiggle.data.datasource.remote.DutchPayApiService
 import com.ssafy.tiggle.data.datasource.remote.FcmApiService
 import com.ssafy.tiggle.data.datasource.remote.PiggyBankApiService
@@ -142,4 +143,9 @@ object NetworkModule {
     @Singleton
     fun provideDutchPayApiService(retrofit: Retrofit): DutchPayApiService =
         retrofit.create(DutchPayApiService::class.java)
+
+    @Provides
+    @Singleton
+    fun provideDonationApiService(retrofit: Retrofit): DonationApiService =
+        retrofit.create(DonationApiService::class.java)
 }

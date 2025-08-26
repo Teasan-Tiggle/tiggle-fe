@@ -8,6 +8,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -28,6 +29,8 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.platform.LocalFocusManager
 import com.ssafy.tiggle.presentation.ui.theme.TiggleBlue
 import com.ssafy.tiggle.presentation.ui.theme.TiggleGrayLight
 import com.ssafy.tiggle.presentation.ui.theme.TiggleGrayText
@@ -63,7 +66,14 @@ fun TiggleTextField(
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .onFocusChanged { focusState ->
+                    // 포커스가 변경될 때 키보드 관련 처리
+                    if (focusState.isFocused) {
+                        // 포커스가 되었을 때의 처리
+                    }
+                },
             placeholder = {
                 Text(
                     text = placeholder,
@@ -95,7 +105,8 @@ fun TiggleTextField(
                 }
             } else null,
             keyboardOptions = KeyboardOptions(
-                keyboardType = keyboardType
+                keyboardType = keyboardType,
+                imeAction = if (maxLines == 1) ImeAction.Next else ImeAction.Done
             ),
             singleLine = maxLines == 1,
             maxLines = maxLines,
