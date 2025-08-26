@@ -149,9 +149,6 @@ fun NavigationGraph(
                             onEditLinkedAccountClick = {
                                 navBackStack.add(Screen.RegisterAccount(isEdit = true))
                             }
-                            onBackClick = {
-                                navBackStack.removeLastOrNull()
-                            }
                         )
                     }
 
