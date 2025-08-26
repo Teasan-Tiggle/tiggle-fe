@@ -47,8 +47,6 @@ import com.ssafy.tiggle.presentation.ui.theme.AppTypography
 import com.ssafy.tiggle.presentation.ui.theme.TiggleBlue
 import com.ssafy.tiggle.presentation.ui.theme.TiggleGrayLight
 import com.ssafy.tiggle.presentation.ui.theme.TiggleGrayText
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 
 @Composable
 fun DonationHistoryScreen(
@@ -99,7 +97,6 @@ fun DonationHistoryScreen(
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 private fun DonationHistoryContent(
     donationHistoryList: List<DonationHistory>
@@ -145,13 +142,12 @@ private fun DonationHistoryContent(
                 }
             }
         }
-        
+
         // Footer 카드는 항상 맨 아래에 표시
         DonationFooterCard()
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 private fun DonationHistoryItem(
     donation: DonationHistory
@@ -192,7 +188,7 @@ private fun DonationHistoryItem(
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = formatDonationDate(donation.donatedAt),
+                text = donation.donatedAt,
                 fontSize = 12.sp,
                 color = TiggleGrayText,
                 style = AppTypography.bodySmall
@@ -201,7 +197,7 @@ private fun DonationHistoryItem(
 
         // 기부 금액
         Text(
-            text = "${Formatter.formatCurrency(donation.amount.toLong())}",
+            text = Formatter.formatCurrency(donation.amount.toLong()),
             fontSize = 16.sp,
             fontWeight = FontWeight.Bold,
             color = Color.Black,
@@ -242,7 +238,7 @@ private fun DonationFooterCard() {
                     color = TiggleBlue
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
@@ -267,17 +263,8 @@ private fun getCategoryIconRes(category: DonationCategory): Int {
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
-private fun formatDonationDate(dateTimeString: String): String {
-    return try {
-        val dateTime = LocalDateTime.parse(dateTimeString, DateTimeFormatter.ISO_LOCAL_DATE_TIME)
-        val formatter = DateTimeFormatter.ofPattern("M월 d일")
-        dateTime.format(formatter)
-    } catch (e: Exception) {
-        dateTimeString
-    }
-}
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Preview(showBackground = true)
 @Composable
 private fun DonationHistoryScreenPreview() {
@@ -312,6 +299,7 @@ private fun DonationHistoryScreenPreview() {
     DonationHistoryContent(donationHistoryList = sampleHistoryList)
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Preview(showBackground = true)
 @Composable
 private fun DonationHistoryEmptyPreview() {
