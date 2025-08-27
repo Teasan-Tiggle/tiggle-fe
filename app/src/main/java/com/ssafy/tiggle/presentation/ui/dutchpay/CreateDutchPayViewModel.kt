@@ -3,8 +3,8 @@ package com.ssafy.tiggle.presentation.ui.dutchpay
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ssafy.tiggle.domain.entity.dutchpay.DutchPayRequest
-import com.ssafy.tiggle.domain.usecase.dutchpay.GetAllUsersUseCase
 import com.ssafy.tiggle.domain.usecase.dutchpay.CreateDutchPayRequestUseCase
+import com.ssafy.tiggle.domain.usecase.dutchpay.GetAllUsersUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -62,19 +62,25 @@ class CreateDutchPayViewModel @Inject constructor(
     }
 
     fun goNext() {
-        _uiState.update { current ->
-            when (current.step) {
-                CreateDutchPayStep.PICK_USERS -> {
-                    current.copy(step = CreateDutchPayStep.INPUT_AMOUNT)
-                }
+        val currentState = _uiState.value
+        if (currentState.isLoading) {
+            return // 중복 실행 방지
+        }
 
-                CreateDutchPayStep.INPUT_AMOUNT -> {
-                    // 더치페이 요청 API 호출
-                    createDutchPayRequest()
-                    current
-                }
+        // when 문을 update 블록 밖으로 꺼냅니다.
+        when (currentState.step) {
+            CreateDutchPayStep.PICK_USERS -> {
+                // 상태 변경만 필요하므로 update 블록 사용
+                _uiState.update { it.copy(step = CreateDutchPayStep.INPUT_AMOUNT) }
+            }
 
-                CreateDutchPayStep.COMPLETE -> current
+            CreateDutchPayStep.INPUT_AMOUNT -> {
+                // API 요청 함수를 직접 호출
+                createDutchPayRequest()
+            }
+
+            CreateDutchPayStep.COMPLETE -> {
+                // 이 로직은 UI에서 onFinish 콜백으로 처리되므로 ViewModel에서는 할 일 없음
             }
         }
     }

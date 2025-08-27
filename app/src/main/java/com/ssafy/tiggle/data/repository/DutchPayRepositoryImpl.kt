@@ -2,6 +2,7 @@ package com.ssafy.tiggle.data.repository
 
 import com.ssafy.tiggle.data.datasource.remote.DutchPayApiService
 import com.ssafy.tiggle.data.model.dutchpay.request.DutchPayRequestDto
+import com.ssafy.tiggle.data.model.dutchpay.request.DutchPayPaymentRequestDto
 import com.ssafy.tiggle.domain.entity.dutchpay.DutchPayRequest
 import com.ssafy.tiggle.domain.entity.dutchpay.DutchPayRequestDetail
 import com.ssafy.tiggle.domain.repository.DutchPayRepository
@@ -62,6 +63,21 @@ class DutchPayRepositoryImpl @Inject constructor(
                 }
             } else {
                 Result.failure(Exception("더치페이 상세 조회 실패: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun payDutchPay(dutchPayId: Long, payMore: Boolean): Result<Unit> {
+        return try {
+            val requestDto = DutchPayPaymentRequestDto(payMore = payMore)
+            val response = dutchPayApiService.payDutchPay(dutchPayId, requestDto)
+
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("송금 실패: ${response.code()}"))
             }
         } catch (e: Exception) {
             Result.failure(e)

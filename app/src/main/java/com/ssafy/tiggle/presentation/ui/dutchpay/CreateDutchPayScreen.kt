@@ -94,9 +94,9 @@ fun CreateDutchPayScreen(
                     }
                 },
                 enabled = when (uiState.step) {
-                    CreateDutchPayStep.PICK_USERS -> uiState.selectedUserIds.isNotEmpty()
-                    CreateDutchPayStep.INPUT_AMOUNT -> uiState.amountText.isNotBlank() && uiState.title.isNotBlank()
-                    CreateDutchPayStep.COMPLETE -> true
+                    CreateDutchPayStep.PICK_USERS -> uiState.selectedUserIds.isNotEmpty() && !uiState.isLoading
+                    CreateDutchPayStep.INPUT_AMOUNT -> uiState.amountText.isNotBlank() && uiState.title.isNotBlank() && !uiState.isLoading
+                    CreateDutchPayStep.COMPLETE -> !uiState.isLoading
                 },
                 isLoading = uiState.isLoading,
                 variant = TiggleButtonVariant.Primary

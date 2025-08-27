@@ -179,7 +179,15 @@ fun NavigationGraph(
 
                     is Screen.DutchpayRecieve -> NavEntry(key) {
                         // key에서 dutchPayId를 직접 꺼내서 화면에 전달합니다.
-                        DutchpayRecieveScreen(dutchPayId = key.dutchPayId)
+                        DutchpayRecieveScreen(
+                            dutchPayId = key.dutchPayId,
+                            onBackClick = { navBackStack.removeLastOrNull() },
+                            onPaymentClick = {
+                                // 송금 성공 후 piggybank 화면으로 이동
+                                navBackStack.clear()
+                                navBackStack.add(BottomScreen.PiggyBank)
+                            }
+                        )
                     }
 
                     is Screen.MainAccountDetail -> NavEntry(key) {

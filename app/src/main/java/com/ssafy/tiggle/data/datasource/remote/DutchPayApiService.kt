@@ -2,6 +2,7 @@ package com.ssafy.tiggle.data.datasource.remote
 
 import com.ssafy.tiggle.data.model.BaseResponse
 import com.ssafy.tiggle.data.model.EmptyResponse
+import com.ssafy.tiggle.data.model.dutchpay.request.DutchPayPaymentRequestDto
 import com.ssafy.tiggle.data.model.dutchpay.request.DutchPayRequestDto
 import com.ssafy.tiggle.data.model.dutchpay.response.DutchPayRequestDetailResponseDto
 import retrofit2.Response
@@ -20,4 +21,10 @@ interface DutchPayApiService {
     suspend fun getDutchPayRequestDetail(
         @Path("id") dutchPayId: Long
     ): Response<BaseResponse<DutchPayRequestDetailResponseDto>>
+
+    @POST("/api/dutchpay/requests/{dutchpayId}/pay")
+    suspend fun payDutchPay(
+        @Path("dutchpayId") dutchPayId: Long,
+        @Body request: DutchPayPaymentRequestDto
+    ): Response<BaseResponse<EmptyResponse>>
 }

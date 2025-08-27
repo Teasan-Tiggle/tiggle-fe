@@ -50,9 +50,25 @@ fun DutchpayRecieveScreen(
     viewModel: DutchPayRequestDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    var payMoreEnabled by remember { mutableStateOf(false) }
 
     LaunchedEffect(dutchPayId) {
         viewModel.loadDutchPayDetail(dutchPayId)
+    }
+
+    // payMore 상태를 detail에서 초기화
+    LaunchedEffect(uiState.dutchPayDetail) {
+        uiState.dutchPayDetail?.let { detail ->
+            payMoreEnabled = detail.payMoreDefault
+        }
+    }
+
+    // 송금 성공 시 처리
+    LaunchedEffect(uiState.isPaymentSuccess) {
+        if (uiState.isPaymentSuccess) {
+            viewModel.clearPaymentSuccess()
+            onPaymentClick()
+        }
     }
 
     TiggleScreenLayout(
@@ -62,9 +78,9 @@ fun DutchpayRecieveScreen(
                 if (!detail.isCreator) {
                     TiggleButton(
                         text = "송금하기",
-                        onClick = onPaymentClick,
+                        onClick = { viewModel.payDutchPay(dutchPayId, payMoreEnabled) },
                         enabled = !uiState.isLoading,
-                        isLoading = false,
+                        isLoading = uiState.isLoading,
                         variant = TiggleButtonVariant.Primary
                     )
                 }
@@ -84,7 +100,9 @@ fun DutchpayRecieveScreen(
             else -> {
                 uiState.dutchPayDetail?.let { detail ->
                     DutchPayPaymentContent(
-                        detail = detail
+                        detail = detail,
+                        payMoreEnabled = payMoreEnabled,
+                        onPayMoreChanged = { payMoreEnabled = it }
                     )
                 }
             }
@@ -105,7 +123,7 @@ fun DutchpayRecieveScreen(
                 TextButton(
                     onClick = { viewModel.clearErrorMessage() }
                 ) {
-                    Text("송금하기")
+                    Text("확인")
                 }
             }
         )
@@ -114,10 +132,10 @@ fun DutchpayRecieveScreen(
 
 @Composable
 private fun DutchPayPaymentContent(
-    detail: DutchPayRequestDetail
+    detail: DutchPayRequestDetail,
+    payMoreEnabled: Boolean,
+    onPayMoreChanged: (Boolean) -> Unit
 ) {
-    var payMoreEnabled by remember { mutableStateOf(detail.payMoreDefault) }
-
     // 내가 낼 금액 계산
     val myPaymentAmount = if (payMoreEnabled) {
         detail.originalAmount + detail.tiggleAmount
@@ -256,7 +274,7 @@ private fun DutchPayPaymentContent(
             title = "돈 더내고 잔돈 기부하기",
             subtitle = "자투리 금액을 티끌 저금통에 적립",
             checked = payMoreEnabled,
-            onCheckedChange = { payMoreEnabled = it }
+            onCheckedChange = onPayMoreChanged
         )
 
         Spacer(modifier = Modifier.height(40.dp))
@@ -322,7 +340,7 @@ private fun PreviewDutchPayPayment() {
             )
         }
     ) {
-        DutchPayPaymentContent(detail = sampleDetail)
+        DutchPayPaymentContent(detail = sampleDetail, payMoreEnabled = true, onPayMoreChanged = {})
     }
 }
 
@@ -357,6 +375,6 @@ private fun PreviewNoTiggleDutchPayPayment() {
             )
         }
     ) {
-        DutchPayPaymentContent(detail = sampleDetail)
+        DutchPayPaymentContent(detail = sampleDetail, payMoreEnabled = false, onPayMoreChanged = {})
     }
 }
