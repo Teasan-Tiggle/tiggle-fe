@@ -5,6 +5,7 @@ import com.ssafy.tiggle.data.model.dutchpay.request.DutchPayRequestDto
 import com.ssafy.tiggle.data.model.dutchpay.request.DutchPayPaymentRequestDto
 import com.ssafy.tiggle.domain.entity.dutchpay.DutchPayRequest
 import com.ssafy.tiggle.domain.entity.dutchpay.DutchPayRequestDetail
+import com.ssafy.tiggle.domain.entity.dutchpay.DutchPaySummary
 import com.ssafy.tiggle.domain.repository.DutchPayRepository
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -78,6 +79,30 @@ class DutchPayRepositoryImpl @Inject constructor(
                 Result.success(Unit)
             } else {
                 Result.failure(Exception("송금 실패: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getDutchPaySummary(): Result<DutchPaySummary> {
+        return try {
+            val response = dutchPayApiService.getDutchPaySummary()
+
+            if (response.isSuccessful) {
+                val responseData = response.body()?.data
+                if (responseData != null) {
+                    val summary = DutchPaySummary(
+                        totalTransferredAmount = responseData.totalTransferredAmount,
+                        transferCount = responseData.transferCount,
+                        participatedCount = responseData.participatedCount
+                    )
+                    Result.success(summary)
+                } else {
+                    Result.failure(Exception("응답 데이터가 없습니다"))
+                }
+            } else {
+                Result.failure(Exception("더치페이 현황 조회 실패: ${response.code()}"))
             }
         } catch (e: Exception) {
             Result.failure(e)

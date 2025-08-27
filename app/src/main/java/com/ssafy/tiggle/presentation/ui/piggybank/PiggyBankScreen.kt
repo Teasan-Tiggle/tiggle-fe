@@ -63,6 +63,7 @@ fun PiggyBankScreen(
     onOpenAccountClick: () -> Unit = {},
     onRegisterAccountClick: () -> Unit = {},
     onStartDutchPayClick: () -> Unit = {},
+    onDutchPayStatusClick: () -> Unit = {},
     onAccountClick: (String) -> Unit = {},
     onShowPiggyBankDetailClick: () -> Unit = {},
     onEditLinkedAccountClick: () -> Unit = {},
@@ -143,7 +144,7 @@ fun PiggyBankScreen(
 
         if (uiState.hasPiggyBank) {
             DutchButtonsRow(
-                onStatus = {},
+                onStatus = onDutchPayStatusClick,
                 onStart = onStartDutchPayClick
             )
         }

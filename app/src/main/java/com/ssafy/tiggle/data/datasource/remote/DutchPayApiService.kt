@@ -5,6 +5,7 @@ import com.ssafy.tiggle.data.model.EmptyResponse
 import com.ssafy.tiggle.data.model.dutchpay.request.DutchPayPaymentRequestDto
 import com.ssafy.tiggle.data.model.dutchpay.request.DutchPayRequestDto
 import com.ssafy.tiggle.data.model.dutchpay.response.DutchPayRequestDetailResponseDto
+import com.ssafy.tiggle.data.model.dutchpay.response.DutchPaySummaryResponseDto
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -27,4 +28,7 @@ interface DutchPayApiService {
         @Path("dutchpayId") dutchPayId: Long,
         @Body request: DutchPayPaymentRequestDto
     ): Response<BaseResponse<EmptyResponse>>
+
+    @GET("/api/dutchpay/requests/summary")
+    suspend fun getDutchPaySummary(): Response<BaseResponse<DutchPaySummaryResponseDto>>
 }
