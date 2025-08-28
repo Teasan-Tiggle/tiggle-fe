@@ -25,7 +25,8 @@ navigation3Runtime = "1.0.0-alpha06"
 lifecycleViewmodelNavigation3Android = "1.0.0-alpha04"
 roomKtx = "2.7.2"
 filament = "1.57.1"
-
+gltfioAndroid = "1.57.1"
+filamentAndroid = "1.17.1"
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-media3-common = { module = "androidx.media3:media3-common", version.ref = "media3Exoplayer" }

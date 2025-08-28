@@ -14,6 +14,7 @@ import com.google.android.filament.utils.Utils
 import com.google.android.filament.IndirectLight
 import com.google.android.filament.gltfio.ResourceLoader
 import android.graphics.PixelFormat
+import android.util.Log
 import com.google.android.filament.EntityManager
 import com.google.android.filament.LightManager
 import java.io.IOException
@@ -26,6 +27,10 @@ import kotlin.math.PI
  */
 // 전역 변수
 private var baseTransform: FloatArray? = null
+// 애니메이션 자동재생용 상태
+private var animIndex: Int = -1
+private var animDurationSec: Float = 0f
+private var animStartNanos: Long = -1L
 
 @SuppressLint("ClickableViewAccessibility")
 @Composable
@@ -43,6 +48,19 @@ fun Character3D(
     val frameCallback = remember {
         object : Choreographer.FrameCallback {
             override fun doFrame(frameTimeNanos: Long) {
+                // ── 애니메이션이 있으면 시간계산해서 적용 ──
+                modelViewer?.let { mv ->
+                    val animator = mv.animator
+                    if (animIndex >= 0 && animator != null && animator.animationCount > 0) {
+                        if (animStartNanos < 0L) animStartNanos = frameTimeNanos
+                        val tSec = ((frameTimeNanos - animStartNanos) / 1_000_000_000.0f)
+                        // duration이 0일 가능성 방지
+                        val dur = if (animDurationSec > 1e-4f) animDurationSec else 1f
+                        val loopTime = (tSec % dur)
+                        animator.applyAnimation(animIndex, loopTime)
+                        animator.updateBoneMatrices()
+                    }
+                }
                 modelViewer?.render(frameTimeNanos)
                 choreographer.postFrameCallback(this)
             }
@@ -68,11 +86,13 @@ fun Character3D(
 
                 // 투명 배경 설정
                 setupTransparentBackground(viewer)
-                addDirectionalLight(viewer)
+
+                // 개선된 조명 설정
+                setupFrontLight(viewer)
+
                 // 터치 이벤트 처리 - 직접 구현
                 if (enableOrbit) {
                     enableHorizontalDragRotation(surfaceView, viewer)
-
                 }
 
                 // 모델 로드
@@ -102,7 +122,25 @@ fun Character3D(
         }
     )
 }
+private fun setupFrontLight(modelViewer: ModelViewer) {
+    // 배경은 투명/스카이박스 없음 (필요시 색만 바꾸세요)
+    modelViewer.scene.skybox = null
+    modelViewer.scene.indirectLight = null   // ✅ 간접광도 제거 (정면 라이트만)
 
+    // 기존에 씬에 있던 라이트가 있다면 정리(선택)
+    // Filament는 라이트 엔티티를 추적하지 않으므로,
+    // 새 씬이 아니라면 별도 관리가 필요합니다. 일단 추가만 하는 상황이면 생략 가능.
+
+    // 정면에서 살짝 내려 비추는 한 개의 방향광
+    val key = EntityManager.get().create()
+    LightManager.Builder(LightManager.Type.DIRECTIONAL)
+        .color(1.0f, 1.0f, 1.0f)   // 순백색 라이트
+        .intensity(200_000f)       // 밝기 (필요하면 80k~200k 사이로 조절)
+        .direction(0f, -0.2f, -1f) // ✅ 화면 정면(–Z)에서 약간 아래로
+        .castShadows(false)        // 그림자 비활성화
+        .build(modelViewer.engine, key)
+    modelViewer.scene.addEntity(key)
+}
 /**
  * 투명 배경 설정
  */
@@ -122,32 +160,8 @@ private fun setupTransparentBackground(modelViewer: ModelViewer) {
         )
         modelViewer.renderer.clearOptions = clearOptions
 
-        // 간접광 추가
-        val indirectLight = IndirectLight.Builder()
-            .intensity(30000.0f)
-            .build(modelViewer.engine)
-        modelViewer.scene.indirectLight = indirectLight
-
     } catch (e: Exception) {
         e.printStackTrace()
-    }
-}
-
-/**
- * 터치 이벤트 처리 (직접 구현)
- */
-private fun handleTouchEvent(event: MotionEvent) {
-    // 기본적인 터치 처리 로직
-    when (event.action) {
-        MotionEvent.ACTION_DOWN -> {
-            // 터치 시작
-        }
-        MotionEvent.ACTION_MOVE -> {
-            // 드래그 중
-        }
-        MotionEvent.ACTION_UP -> {
-            // 터치 종료
-        }
     }
 }
 
@@ -160,16 +174,58 @@ private fun loadModelForLevel(context: Context, modelViewer: ModelViewer, level:
         val buffer = readAssetFile(context, assetPath) ?: return
 
         modelViewer.loadModelGlb(buffer)
-        modelViewer.asset?.let { asset ->
-            ResourceLoader(modelViewer.engine).loadResources(asset)
-        }
-        // 🔥 리소스 로더 호출 (텍스처/머티리얼 GPU 업로드)
-        modelViewer.asset?.let { asset ->
-            ResourceLoader(modelViewer.engine).loadResources(asset)
-        }
 
-        // 모델 크기 정규화
-        modelViewer.transformToUnitCube()
+        // 리소스 로더 호출 (텍스처/머티리얼 GPU 업로드)
+        modelViewer.asset?.let { asset ->
+            ResourceLoader(modelViewer.engine).loadResources(asset)
+        }
+        val asset = modelViewer.asset
+        val animator = modelViewer.animator
+        val animationCount = animator?.animationCount ?: 0
+        val hasAnimation = animationCount > 0
+
+        if (hasAnimation) {
+            // 애니메이션이 있으니까 크기 줄이기
+            val tm = modelViewer.engine.transformManager
+            val root = asset!!.root
+            val rootInst = tm.getInstance(root)
+
+            val scale = 0.28f
+            val translateY = -0.20f
+
+            // column-major 4x4, translation은 [12],[13],[14] 슬롯
+            val trs = floatArrayOf(
+                scale, 0f,   0f,   0f,
+                0f,    scale,0f,   0f,
+                0f,    0f,   scale,0f,
+                0f,    translateY, 0f, 1f
+            )
+            tm.setTransform(rootInst, trs)
+
+            // 공통 프레임 루프에서 돌리도록 애니메이션 정보만 세팅
+            animIndex = 0
+            animDurationSec = animator?.getAnimationDuration(0) ?: 1f
+            animStartNanos = -1L  // 다음 프레임에서 시작점 리셋
+
+
+            var animationTime = 0f
+            val choreographer = Choreographer.getInstance()
+            val cb = object : Choreographer.FrameCallback {
+                override fun doFrame(frameTimeNanos: Long) {
+                    animationTime += 0.016f  // 프레임당 약 16ms 진행
+
+                    animator?.applyAnimation(0, animationTime) // 0번 애니메이션 적용
+                    animator?.updateBoneMatrices()
+
+                    modelViewer.render(frameTimeNanos)
+                    choreographer.postFrameCallback(this)
+                }
+            }
+            choreographer.postFrameCallback(cb)
+        } else {
+            // 기존처럼 모델 크기 정규화
+            modelViewer.transformToUnitCube()
+        }
 
         // root 트랜스폼 저장
         modelViewer.asset?.let { asset ->
@@ -185,7 +241,6 @@ private fun loadModelForLevel(context: Context, modelViewer: ModelViewer, level:
         e.printStackTrace()
     }
 }
-
 
 
 /**
@@ -236,7 +291,7 @@ private fun enableHorizontalDragRotation(surfaceView: SurfaceView, modelViewer: 
                         // 드래그 MOVE에서
                         val radians = (accumulatedRotation * PI / 180f).toFloat()
 
-// Y축 회전 행렬을 floatArray로 직접 만들기
+                        // Y축 회전 행렬을 floatArray로 직접 만들기
                         val cos = kotlin.math.cos(radians)
                         val sin = kotlin.math.sin(radians)
                         val rotMat = floatArrayOf(
@@ -246,11 +301,9 @@ private fun enableHorizontalDragRotation(surfaceView: SurfaceView, modelViewer: 
                             0f, 0f, 0f, 1f
                         )
 
-// baseTransform × rotMat
+                        // baseTransform × rotMat
                         val finalMat = multiplyMat4(baseTransform!!, rotMat)
-
                         tm.setTransform(ti, finalMat)
-
                     }
                 }
             }
@@ -272,29 +325,4 @@ private fun multiplyMat4(a: FloatArray, b: FloatArray): FloatArray {
         }
     }
     return out
-}
-private fun addDirectionalLight(modelViewer: ModelViewer) {
-    val engine = modelViewer.engine
-
-    // (선택) 배경 클리어 색 — 완전 투명 원하면 clear=false로
-    val clear = modelViewer.renderer.clearOptions
-    clear.clear = true
-    clear.clearColor = floatArrayOf(0.94f, 0.98f, 1.0f, 1.0f)
-    modelViewer.renderer.clearOptions = clear
-
-    // Skybox는 그대로 null 유지
-    // 간접광은 약하게만 (IBL 없는 상태)
-    modelViewer.scene.indirectLight = com.google.android.filament.IndirectLight.Builder()
-        .intensity(20_000.0f)
-        .build(engine)
-
-    // ✅ 방향광(햇빛) 추가
-    val sun = EntityManager.get().create()
-    LightManager.Builder(LightManager.Type.DIRECTIONAL)
-        .color(1.0f, 1.0f, 1.0f)
-        .intensity(80_000.0f)           // 밝기 (필요시 조절)
-        .direction(0.2f, -1.0f, -0.3f)  // 위에서 비스듬히
-        .castShadows(true)
-        .build(engine, sun)
-    modelViewer.scene.addEntity(sun)
 }

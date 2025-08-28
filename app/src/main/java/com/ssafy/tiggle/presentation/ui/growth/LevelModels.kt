@@ -6,10 +6,10 @@ import android.util.Log
 object LevelModels {
      fun assetPathFor(level: Int): String {
          val bucket = when {
-             level ==0 -> "level_5.glb"
-             level ==1 -> "level_5.glb"
-             level ==2 -> "level_5.glb"
-             else -> "level_5.glb"
+             level ==0 -> "level_1.glb"
+             level ==1 -> "level_2.glb"
+             level ==2 -> "level_3.glb"
+             else -> "level_4.glb"
          }
          return "models/$bucket"
      }

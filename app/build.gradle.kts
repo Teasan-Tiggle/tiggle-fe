@@ -100,9 +100,9 @@ dependencies {
     implementation(libs.androidx.media3.datasource.okhttp)
 
     //Filament
-    implementation(libs.filament.android)
-    implementation(libs.gltfio.android)
-    implementation(libs.filament.utils.android)
+    implementation("com.google.android.filament:filament-android:1.57.1")
+    implementation("com.google.android.filament:gltfio-android:1.57.1")
+    implementation("com.google.android.filament:filament-utils-android:1.57.1")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
