@@ -1,14 +1,21 @@
 package com.ssafy.tiggle.presentation.ui.growth
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.ssafy.tiggle.domain.usecase.growth.GrowthUseCases
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import retrofit2.HttpException
 import javax.inject.Inject
 
 @HiltViewModel
-class GrowthViewModel @Inject constructor() : ViewModel() {
+class GrowthViewModel @Inject constructor(
+    val growthUseCases: GrowthUseCases
+) : ViewModel() {
     
     private val _uiState = MutableStateFlow(GrowthUiState())
     val uiState: StateFlow<GrowthUiState> = _uiState.asStateFlow()
@@ -19,16 +26,34 @@ class GrowthViewModel @Inject constructor() : ViewModel() {
     }
     
     private fun loadGrowthData() {
-        // TODO: 실제 API에서 데이터 로드
-        // 현재는 더미 데이터 사용
-        _uiState.value = _uiState.value.copy(
-            totalDonationAmount = 17800,
-            nextGoalAmount = 2500,
-            currentLevel = "쓸",
-            characterStatus = "행복"
-        )
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+
+            val result = growthUseCases.getGrowthResultUseCase()
+
+            result
+                .onSuccess { growth ->
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            growth = growth,
+                            characterStatus = "행복"
+                        )
+                    }
+                }
+                .onFailure { e ->
+                    val isNotFound = (e is HttpException && e.code() == 404)
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = e.message ?: "성장 조회에 실패했습니다."
+                        )
+                    }
+                }
+        }
     }
-    
+
+
     fun onDonationHistoryClick() {
         // TODO: 기부 기록 화면으로 이동
     }

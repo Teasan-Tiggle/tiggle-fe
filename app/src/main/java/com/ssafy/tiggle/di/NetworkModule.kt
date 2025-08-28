@@ -8,6 +8,7 @@ import com.ssafy.tiggle.data.datasource.remote.AuthApiService
 import com.ssafy.tiggle.data.datasource.remote.DonationApiService
 import com.ssafy.tiggle.data.datasource.remote.DutchPayApiService
 import com.ssafy.tiggle.data.datasource.remote.FcmApiService
+import com.ssafy.tiggle.data.datasource.remote.GrowthApiService
 import com.ssafy.tiggle.data.datasource.remote.PiggyBankApiService
 import com.ssafy.tiggle.data.datasource.remote.UniversityApiService
 import com.ssafy.tiggle.data.datasource.remote.UserApiService
@@ -148,4 +149,9 @@ object NetworkModule {
     @Singleton
     fun provideDonationApiService(retrofit: Retrofit): DonationApiService =
         retrofit.create(DonationApiService::class.java)
+
+    @Provides
+    @Singleton
+    fun provideGrowthService(retrofit: Retrofit): GrowthApiService =
+        retrofit.create(GrowthApiService::class.java)
 }

@@ -1,13 +1,13 @@
 package com.ssafy.tiggle.presentation.ui.growth
 
+import com.ssafy.tiggle.domain.entity.growth.GrowthResult
+
 /**
  * 성장 화면의 UI 상태
  */
 data class GrowthUiState(
     val isLoading: Boolean = false,
-    val totalDonationAmount: Int = 17800, // 총 티끌 금액
-    val nextGoalAmount: Int = 2500, // 다음 레벨까지 필요한 금액
-    val currentLevel: String = "쓸", // 현재 레벨
+    val growth: GrowthResult= GrowthResult(),
     val characterStatus: String = "행복", // 캐릭터 상태
     val donationHistory: List<DonationRecord> = emptyList(),
     val donationRanking: List<RankingItem> = emptyList(),

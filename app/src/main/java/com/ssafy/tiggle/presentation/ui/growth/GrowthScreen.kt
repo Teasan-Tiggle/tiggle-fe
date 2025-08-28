@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -40,6 +41,7 @@ import com.ssafy.tiggle.presentation.ui.theme.AppTypography
 import com.ssafy.tiggle.presentation.ui.theme.TiggleBlue
 import com.ssafy.tiggle.presentation.ui.theme.TiggleGrayLight
 import com.ssafy.tiggle.presentation.ui.theme.TiggleGrayText
+import com.ssafy.tiggle.presentation.ui.theme.TiggleSkyBlue
 
 @Composable
 fun GrowthScreen(
@@ -80,9 +82,7 @@ fun GrowthScreen(
 
                          // 성장 카드 (아이콘들 포함)
              GrowthCard(
-                 totalAmount = uiState.totalDonationAmount,
-                 nextGoalAmount = uiState.nextGoalAmount,
-                 currentLevel = uiState.currentLevel,
+                 uiState=uiState,
                  onDonationHistoryClick = onDonationHistoryClick,
                  onDonationStatusClick = onDonationStatusClick,
                  onDonationRankingClick = onDonationRankingClick
@@ -152,22 +152,21 @@ private fun GrowthIconItem(
 
 @Composable
 private fun GrowthCard(
-    totalAmount: Int,
-    nextGoalAmount: Int,
-    currentLevel: String,
+    uiState: GrowthUiState,
     onDonationHistoryClick: () -> Unit,
     onDonationStatusClick: () -> Unit,
-    onDonationRankingClick: () -> Unit
+    onDonationRankingClick: () -> Unit,
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxSize(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = TiggleGrayLight),
+        colors = CardDefaults.cardColors(containerColor = TiggleSkyBlue),
         elevation = CardDefaults.cardElevation(0.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .fillMaxHeight()
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -181,21 +180,8 @@ private fun GrowthCard(
             Spacer(Modifier.height(24.dp))
 
             // 캐릭터 이미지 (현재는 비워둠)
-            Box(
-                modifier = Modifier
-                    .size(200.dp)
-                    .background(
-                        Color.White.copy(alpha = 0.5f),
-                        RoundedCornerShape(16.dp)
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                // TODO: 캐릭터 이미지 추가
-                Text(
-                    text = "캐릭터 영역",
-                    color = TiggleGrayText,
-                    fontSize = 14.sp
-                )
+            Box(Modifier.fillMaxWidth().height(500.dp).background(Color.Transparent) ) {
+                Character3D(level = uiState.growth.level, modifier = Modifier.fillMaxSize())
             }
 
             Spacer(Modifier.height(20.dp))
@@ -205,7 +191,7 @@ private fun GrowthCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "레벨 7",
+                    text = "레벨 ${uiState.growth.level+1}",
                     fontSize = 14.sp,
                     color = TiggleGrayText,
                     modifier = Modifier
@@ -219,7 +205,7 @@ private fun GrowthCard(
                 Spacer(Modifier.width(12.dp))
 
                 Text(
-                    text = currentLevel,
+                    text = "쏠",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = TiggleBlue
@@ -230,7 +216,7 @@ private fun GrowthCard(
 
             // 총 티끌 금액
             Text(
-                text = "총 티끌: ${Formatter.formatCurrency(totalAmount.toLong())}",
+                text = "총 티끌: ${Formatter.formatCurrency(uiState.growth.totalAmount)}",
                 fontSize = 16.sp,
                 color = Color.Black,
                 fontWeight = FontWeight.Medium
@@ -253,7 +239,7 @@ private fun GrowthCard(
 
             // 다음 레벨까지 필요한 금액
             Text(
-                text = "다음 레벨까지 ${Formatter.formatCurrency(nextGoalAmount.toLong())}",
+                text = "다음 레벨까지 ${Formatter.formatCurrency(uiState.growth.toNextLevel.toLong())}",
                 fontSize = 12.sp,
                 color = TiggleGrayText
             )
