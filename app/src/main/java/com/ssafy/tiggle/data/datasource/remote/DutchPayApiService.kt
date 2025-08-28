@@ -2,13 +2,18 @@ package com.ssafy.tiggle.data.datasource.remote
 
 import com.ssafy.tiggle.data.model.BaseResponse
 import com.ssafy.tiggle.data.model.EmptyResponse
+import com.ssafy.tiggle.data.model.dutchpay.request.DutchPayPaymentRequestDto
 import com.ssafy.tiggle.data.model.dutchpay.request.DutchPayRequestDto
 import com.ssafy.tiggle.data.model.dutchpay.response.DutchPayRequestDetailResponseDto
+import com.ssafy.tiggle.data.model.dutchpay.response.DutchPaySummaryResponseDto
+import com.ssafy.tiggle.data.model.dutchpay.response.DutchPayListResponseDto
+import com.ssafy.tiggle.data.model.dutchpay.response.DutchPayDetailResponseDto
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Path
+import retrofit2.http.Query
 
 interface DutchPayApiService {
     @POST("/api/dutchpay/requests")
@@ -20,4 +25,24 @@ interface DutchPayApiService {
     suspend fun getDutchPayRequestDetail(
         @Path("id") dutchPayId: Long
     ): Response<BaseResponse<DutchPayRequestDetailResponseDto>>
+
+    @GET("/api/dutchpay/requests/{id}")
+    suspend fun getDutchPayDetail(
+        @Path("id") dutchPayId: Long
+    ): Response<BaseResponse<DutchPayDetailResponseDto>>
+
+    @POST("/api/dutchpay/requests/{dutchpayId}/pay")
+    suspend fun payDutchPay(
+        @Path("dutchpayId") dutchPayId: Long,
+        @Body request: DutchPayPaymentRequestDto
+    ): Response<BaseResponse<EmptyResponse>>
+
+    @GET("/api/dutchpay/requests/summary")
+    suspend fun getDutchPaySummary(): Response<BaseResponse<DutchPaySummaryResponseDto>>
+
+    @GET("/api/dutchpay/requests/list")
+    suspend fun getDutchPayList(
+        @Query("tab") tab: String,
+        @Query("cursor") cursor: String? = null
+    ): Response<BaseResponse<DutchPayListResponseDto>>
 }

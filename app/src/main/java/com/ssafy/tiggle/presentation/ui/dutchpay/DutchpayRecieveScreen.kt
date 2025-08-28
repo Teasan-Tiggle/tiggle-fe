@@ -1,5 +1,7 @@
 package com.ssafy.tiggle.presentation.ui.dutchpay
 
+import androidx.compose.animation.core.animateIntAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -41,6 +44,7 @@ import com.ssafy.tiggle.presentation.ui.components.TiggleScreenLayout
 import com.ssafy.tiggle.presentation.ui.components.TiggleSwitchRow
 import com.ssafy.tiggle.presentation.ui.theme.AppTypography
 import com.ssafy.tiggle.presentation.ui.theme.TiggleBlue
+import com.ssafy.tiggle.presentation.ui.dutchpay.DutchPayRequestDetailViewModel
 
 @Composable
 fun DutchpayRecieveScreen(
@@ -50,9 +54,25 @@ fun DutchpayRecieveScreen(
     viewModel: DutchPayRequestDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    var payMoreEnabled by remember { mutableStateOf(false) }
 
     LaunchedEffect(dutchPayId) {
         viewModel.loadDutchPayDetail(dutchPayId)
+    }
+
+    // payMore 상태를 detail에서 초기화
+    LaunchedEffect(uiState.dutchPayDetail) {
+        uiState.dutchPayDetail?.let { detail ->
+            payMoreEnabled = detail.payMoreDefault
+        }
+    }
+
+    // 송금 성공 시 처리
+    LaunchedEffect(uiState.isPaymentSuccess) {
+        if (uiState.isPaymentSuccess) {
+            viewModel.clearPaymentSuccess()
+            onPaymentClick()
+        }
     }
 
     TiggleScreenLayout(
@@ -62,9 +82,9 @@ fun DutchpayRecieveScreen(
                 if (!detail.isCreator) {
                     TiggleButton(
                         text = "송금하기",
-                        onClick = onPaymentClick,
+                        onClick = { viewModel.payDutchPay(dutchPayId, payMoreEnabled) },
                         enabled = !uiState.isLoading,
-                        isLoading = false,
+                        isLoading = uiState.isLoading,
                         variant = TiggleButtonVariant.Primary
                     )
                 }
@@ -84,7 +104,9 @@ fun DutchpayRecieveScreen(
             else -> {
                 uiState.dutchPayDetail?.let { detail ->
                     DutchPayPaymentContent(
-                        detail = detail
+                        detail = detail,
+                        payMoreEnabled = payMoreEnabled,
+                        onPayMoreChanged = { payMoreEnabled = it }
                     )
                 }
             }
@@ -105,7 +127,7 @@ fun DutchpayRecieveScreen(
                 TextButton(
                     onClick = { viewModel.clearErrorMessage() }
                 ) {
-                    Text("송금하기")
+                    Text("확인")
                 }
             }
         )
@@ -113,11 +135,30 @@ fun DutchpayRecieveScreen(
 }
 
 @Composable
-private fun DutchPayPaymentContent(
-    detail: DutchPayRequestDetail
+private fun AnimatedNumberCounter(
+    targetValue: Long,
+    modifier: Modifier = Modifier
 ) {
-    var payMoreEnabled by remember { mutableStateOf(detail.payMoreDefault) }
+    val animatedValue by animateIntAsState(
+        targetValue = targetValue.toInt(),
+        animationSpec = tween(durationMillis = 1000),
+        label = "number_animation"
+    )
+    
+    Text(
+        text = "+ ${Formatter.formatCurrency(animatedValue.toLong())}",
+        style = AppTypography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+        color = TiggleBlue,
+        modifier = modifier
+    )
+}
 
+@Composable
+private fun DutchPayPaymentContent(
+    detail: DutchPayRequestDetail,
+    payMoreEnabled: Boolean,
+    onPayMoreChanged: (Boolean) -> Unit
+) {
     // 내가 낼 금액 계산
     val myPaymentAmount = if (payMoreEnabled) {
         detail.originalAmount + detail.tiggleAmount
@@ -240,23 +281,65 @@ private fun DutchPayPaymentContent(
 
                 if (payMoreEnabled && detail.tiggleAmount > 0) {
                     Spacer(modifier = Modifier.height(8.dp))
-                    DetailRow(
-                        label = "티끌",
-                        value = "+${Formatter.formatCurrency(detail.tiggleAmount)}",
-                        valueColor = TiggleBlue
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "티끌",
+                            style = AppTypography.bodyMedium,
+                            color = Color.Gray
+                        )
+                        AnimatedNumberCounter(
+                            targetValue = detail.tiggleAmount
+                        )
+                    }
                 }
             }
         }
 
         Spacer(modifier = Modifier.height(20.dp))
 
+        // 티끌 적립 정보 표시 (payMoreEnabled이고 tiggleAmount가 0보다 클 때만)
+        if (payMoreEnabled && detail.tiggleAmount > 0) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFF0F8FF)),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "🐷",
+                        fontSize = 20.sp
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = "티끌 적립",
+                        style = AppTypography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                        color = Color(0xFF1B6BFF),
+                        modifier = Modifier.weight(1f)
+                    )
+                    AnimatedNumberCounter(
+                        targetValue = detail.tiggleAmount
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
         // 돈 더내고 잔돈 기부하기 스위치
         TiggleSwitchRow(
             title = "돈 더내고 잔돈 기부하기",
             subtitle = "자투리 금액을 티끌 저금통에 적립",
             checked = payMoreEnabled,
-            onCheckedChange = { payMoreEnabled = it }
+            onCheckedChange = onPayMoreChanged
         )
 
         Spacer(modifier = Modifier.height(40.dp))
@@ -322,7 +405,7 @@ private fun PreviewDutchPayPayment() {
             )
         }
     ) {
-        DutchPayPaymentContent(detail = sampleDetail)
+        DutchPayPaymentContent(detail = sampleDetail, payMoreEnabled = true, onPayMoreChanged = {})
     }
 }
 
@@ -357,6 +440,6 @@ private fun PreviewNoTiggleDutchPayPayment() {
             )
         }
     ) {
-        DutchPayPaymentContent(detail = sampleDetail)
+        DutchPayPaymentContent(detail = sampleDetail, payMoreEnabled = false, onPayMoreChanged = {})
     }
 }

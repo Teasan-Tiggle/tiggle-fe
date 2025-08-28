@@ -1,5 +1,7 @@
 package com.ssafy.tiggle.presentation.ui.dutchpay
 
+import androidx.compose.animation.core.animateIntAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -13,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
@@ -27,6 +30,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -51,6 +57,9 @@ import com.ssafy.tiggle.presentation.ui.components.UserPicker
 import com.ssafy.tiggle.presentation.ui.theme.AppTypography
 import com.ssafy.tiggle.presentation.ui.theme.TiggleBlue
 import com.ssafy.tiggle.presentation.ui.theme.TiggleGrayLight
+import com.ssafy.tiggle.presentation.ui.dutchpay.CreateDutchPayState
+import com.ssafy.tiggle.presentation.ui.dutchpay.CreateDutchPayStep
+import com.ssafy.tiggle.presentation.ui.dutchpay.CreateDutchPayViewModel
 import kotlin.math.ceil
 
 @Composable
@@ -94,9 +103,9 @@ fun CreateDutchPayScreen(
                     }
                 },
                 enabled = when (uiState.step) {
-                    CreateDutchPayStep.PICK_USERS -> uiState.selectedUserIds.isNotEmpty()
-                    CreateDutchPayStep.INPUT_AMOUNT -> uiState.amountText.isNotBlank() && uiState.title.isNotBlank()
-                    CreateDutchPayStep.COMPLETE -> true
+                    CreateDutchPayStep.PICK_USERS -> uiState.selectedUserIds.isNotEmpty() && !uiState.isLoading
+                    CreateDutchPayStep.INPUT_AMOUNT -> uiState.amountText.isNotBlank() && uiState.title.isNotBlank() && !uiState.isLoading
+                    CreateDutchPayStep.COMPLETE -> !uiState.isLoading
                 },
                 isLoading = uiState.isLoading,
                 variant = TiggleButtonVariant.Primary
@@ -218,6 +227,50 @@ fun DutchPayInputAmountContent(
             checked = payMore,
             onCheckedChange = onPayMoreChange
         )
+        
+        // 티끌 적립 정보 표시 (payMore가 true일 때만)
+        if (payMore) {
+            val total = amountText.toLongOrNull() ?: 0L
+            val participantCount = if (selectedCount > 0) selectedCount + 1 else 0
+            if (total > 0 && participantCount > 0) {
+                val perHead = total.toDouble() / participantCount
+                val myAmount = roundUpToHundreds(perHead)
+                val tiggleAmount = myAmount - perHead.toLong()
+                
+                if (tiggleAmount > 0) {
+                    Spacer(Modifier.height(12.dp))
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF0F8FF)),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "🐷",
+                                fontSize = 20.sp
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = "티끌 적립",
+                                style = AppTypography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                                color = Color(0xFF1B6BFF),
+                                modifier = Modifier.weight(1f)
+                            )
+                            AnimatedNumberCounter(
+                                targetValue = tiggleAmount
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        
         Spacer(Modifier.height(16.dp))
         TiggleTextField(
             value = title,
@@ -270,6 +323,25 @@ private fun SelectedUserBadge(name: String) {
 }
 
 @Composable
+private fun AnimatedNumberCounter(
+    targetValue: Long,
+    modifier: Modifier = Modifier
+) {
+    val animatedValue by animateIntAsState(
+        targetValue = targetValue.toInt(),
+        animationSpec = tween(durationMillis = 1000),
+        label = "number_animation"
+    )
+    
+    Text(
+        text = "+ ${Formatter.formatCurrency(animatedValue.toLong())}",
+        style = AppTypography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+        color = TiggleBlue,
+        modifier = modifier
+    )
+}
+
+@Composable
 private fun DutchPaySummary(totalAmount: Long, participantCount: Int, payMore: Boolean) {
     // 1인당 금액 계산
     val perHead = if (participantCount > 0) totalAmount.toDouble() / participantCount else 0.0
@@ -303,6 +375,30 @@ private fun DutchPaySummary(totalAmount: Long, participantCount: Int, payMore: B
             HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
             Spacer(Modifier.height(8.dp))
             SummaryRow(label = "내 결제 금액", value = Formatter.formatCurrency(myAmount))
+            
+            // 티끌 적립 정보 표시 (payMore가 true일 때만)
+            if (payMore) {
+                val tiggleAmount = myAmount - perHead.toLong()
+                if (tiggleAmount > 0) {
+                    Spacer(Modifier.height(8.dp))
+                    HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
+                    Spacer(Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "🐷 티끌 적립",
+                            style = AppTypography.bodySmall,
+                            color = TiggleBlue
+                        )
+                        AnimatedNumberCounter(
+                            targetValue = tiggleAmount
+                        )
+                    }
+                }
+            }
             Spacer(Modifier.height(8.dp))
         }
     }
