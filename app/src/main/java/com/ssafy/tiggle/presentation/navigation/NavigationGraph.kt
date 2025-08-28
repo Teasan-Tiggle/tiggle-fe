@@ -17,6 +17,7 @@ import androidx.navigation3.ui.rememberSceneSetupNavEntryDecorator
 import com.ssafy.tiggle.presentation.ui.auth.login.LoginScreen
 import com.ssafy.tiggle.presentation.ui.auth.signup.SignUpScreen
 import com.ssafy.tiggle.presentation.ui.donation.DonationHistoryScreen
+import com.ssafy.tiggle.presentation.ui.donation.DonationRankingScreen
 import com.ssafy.tiggle.presentation.ui.donation.DonationStatusScreen
 import com.ssafy.tiggle.presentation.ui.dutchpay.CreateDutchPayScreen
 import com.ssafy.tiggle.presentation.ui.dutchpay.DutchpayRecieveScreen
@@ -122,7 +123,7 @@ fun NavigationGraph(
                                 navBackStack.add(Screen.DonationStatus)
                             },
                             onDonationRankingClick = {
-                                // TODO: 기부 랭킹 화면 구현 시 추가
+                                navBackStack.add(Screen.DonationRanking)
                             }
                         )
                     }
@@ -217,6 +218,12 @@ fun NavigationGraph(
                     is Screen.DonationStatus -> NavEntry(key) {
                         DonationStatusScreen(
                             onBackClick = { navBackStack.removeLastOrNull() }
+                        )
+                    }
+
+                    is Screen.DonationRanking -> NavEntry(key) {
+                        DonationRankingScreen(
+                            onNavigateBack = { navBackStack.removeLastOrNull() }
                         )
                     }
 
