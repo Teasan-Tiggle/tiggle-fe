@@ -2,6 +2,7 @@ package com.ssafy.tiggle.domain.repository
 
 import com.ssafy.tiggle.domain.entity.donation.DonationAccount
 import com.ssafy.tiggle.domain.entity.donation.DonationHistory
+import com.ssafy.tiggle.domain.entity.donation.DonationRank
 import com.ssafy.tiggle.domain.entity.donation.DonationRequest
 import com.ssafy.tiggle.domain.entity.donation.DonationStatus
 import com.ssafy.tiggle.domain.entity.donation.DonationStatusType
@@ -13,4 +14,6 @@ interface DonationRepository {
     suspend fun getDonationStatus(type: DonationStatusType): Result<DonationStatus>
     suspend fun getDonationAccount(): Result<DonationAccount>
     suspend fun createDonation(request: DonationRequest): Result<Unit>
+    suspend fun getUniversityRanking(): Result<List<DonationRank>>
+    suspend fun getDepartmentRanking(): Result<List<DonationRank>>
 }

@@ -5,6 +5,7 @@ import com.ssafy.tiggle.data.model.donation.DonationRequestDto
 import com.ssafy.tiggle.domain.entity.donation.DonationAccount
 import com.ssafy.tiggle.domain.entity.donation.DonationCategory
 import com.ssafy.tiggle.domain.entity.donation.DonationHistory
+import com.ssafy.tiggle.domain.entity.donation.DonationRank
 import com.ssafy.tiggle.domain.entity.donation.DonationRequest
 import com.ssafy.tiggle.domain.entity.donation.DonationStatus
 import com.ssafy.tiggle.domain.entity.donation.DonationStatusType
@@ -128,6 +129,46 @@ class DonationRepositoryImpl @Inject constructor(
                 Result.success(Unit)
             } else {
                 Result.failure(Exception(response.body()?.message ?: "기부 처리 중 오류가 발생했습니다."))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getUniversityRanking(): Result<List<DonationRank>> {
+        return try {
+            val response = donationApiService.getUniversityRanking()
+            if (response.isSuccessful && response.body()?.result == true) {
+                val rankingList = response.body()?.data?.map { dto ->
+                    DonationRank(
+                        rank = dto.rank,
+                        name = dto.name,
+                        amount = dto.amount
+                    )
+                } ?: emptyList()
+                Result.success(rankingList)
+            } else {
+                Result.failure(Exception("Failed to fetch university ranking"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getDepartmentRanking(): Result<List<DonationRank>> {
+        return try {
+            val response = donationApiService.getDepartmentRanking()
+            if (response.isSuccessful && response.body()?.result == true) {
+                val rankingList = response.body()?.data?.map { dto ->
+                    DonationRank(
+                        rank = dto.rank,
+                        amount = dto.amount,
+                        name = dto.name
+                    )
+                } ?: emptyList()
+                Result.success(rankingList)
+            } else {
+                Result.failure(Exception("Failed to fetch department ranking"))
             }
         } catch (e: Exception) {
             Result.failure(e)
