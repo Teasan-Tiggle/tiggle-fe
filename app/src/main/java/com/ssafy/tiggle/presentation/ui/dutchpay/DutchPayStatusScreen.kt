@@ -1,6 +1,10 @@
 package com.ssafy.tiggle.presentation.ui.dutchpay
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.animateIntAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,8 +25,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
@@ -30,13 +32,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
-import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -53,12 +52,12 @@ import com.ssafy.tiggle.domain.entity.dutchpay.DutchPaySummary
 import com.ssafy.tiggle.presentation.ui.components.TiggleScreenLayout
 import com.ssafy.tiggle.presentation.ui.theme.AppTypography
 import com.ssafy.tiggle.presentation.ui.theme.TiggleBlue
-import com.ssafy.tiggle.presentation.ui.theme.TiggleGray
-import com.ssafy.tiggle.presentation.ui.theme.TiggleGrayText
+import kotlinx.coroutines.flow.distinctUntilChanged
 
 @Composable
 fun DutchPayStatusScreen(
     onBackClick: () -> Unit,
+    onItemClick: (Long) -> Unit = {},
     viewModel: DutchPayStatusViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -93,7 +92,7 @@ fun DutchPayStatusScreen(
                         fontSize = 16.sp
                     )
                     Spacer(modifier = Modifier.height(16.dp))
-                    Button(onClick = { viewModel.loadDutchPaySummary() }) {
+                    Button(onClick = { /* TODO: 재시도 로직 구현 */ }) {
                         Text("다시 시도")
                     }
                 }
@@ -102,22 +101,51 @@ fun DutchPayStatusScreen(
             uiState.summary != null -> {
                 DutchPayStatusContent(
                     summary = uiState.summary!!,
-                    uiState = uiState,
+                    selectedTabIndex = uiState.selectedTabIndex,
+                    inProgressItems = uiState.inProgressItems,
+                    completedItems = uiState.completedItems,
+                    hasNextInProgress = uiState.hasNextInProgress,
+                    hasNextCompleted = uiState.hasNextCompleted,
+                    isLoadingMore = uiState.isLoadingMore,
                     onTabSelected = viewModel::onTabSelected,
-                    onLoadMore = viewModel::loadMoreItems
+                    onLoadMore = viewModel::loadMoreItems,
+                    onItemClick = onItemClick
                 )
             }
         }
     }
 }
 
+// DutchPayItemCard는 변경사항 없습니다.
+@Composable
+private fun AnimatedNumberCounter(
+    targetValue: Int,
+    modifier: Modifier = Modifier
+) {
+    val animatedValue by animateIntAsState(
+        targetValue = targetValue,
+        animationSpec = tween(durationMillis = 1000),
+        label = "number_animation"
+    )
+    
+    Text(
+        text = "+ ${Formatter.formatCurrency(animatedValue.toLong())}",
+        style = AppTypography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+        color = Color(0xFF1B6BFF),
+        modifier = modifier
+    )
+}
+
 @Composable
 private fun DutchPayItemCard(
     item: DutchPayItem,
-    isCompletedTab: Boolean = false
+    isCompletedTab: Boolean = false,
+    onCardClick: (Long) -> Unit = {}
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onCardClick(item.dutchpayId) },
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -125,12 +153,10 @@ private fun DutchPayItemCard(
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
-            // 헤더: 아이콘과 제목
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // 아이콘
                 Box(
                     modifier = Modifier
                         .size(40.dp)
@@ -140,34 +166,20 @@ private fun DutchPayItemCard(
                         ),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "💰",
-                        fontSize = 20.sp
-                    )
+                    Text(text = "💰", fontSize = 20.sp)
                 }
-                
                 Spacer(modifier = Modifier.width(12.dp))
-                
-                // 제목
                 Text(
                     text = item.title,
-                    style = AppTypography.bodyLarge.copy(
-                        fontWeight = FontWeight.Bold
-                    ),
+                    style = AppTypography.bodyLarge.copy(fontWeight = FontWeight.Bold),
                     modifier = Modifier.weight(1f)
                 )
             }
-
             Spacer(modifier = Modifier.height(16.dp))
-
-            // 금액 정보 (회색 배경 박스)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(
-                        color = Color(0xFFF5F5F5),
-                        shape = RoundedCornerShape(8.dp)
-                    )
+                    .background(color = Color(0xFFF5F5F5), shape = RoundedCornerShape(8.dp))
                     .padding(12.dp)
             ) {
                 Row(
@@ -187,10 +199,7 @@ private fun DutchPayItemCard(
                             color = Color(0xFF999999)
                         )
                     }
-
-                    Column(
-                        horizontalAlignment = Alignment.End
-                    ) {
+                    Column(horizontalAlignment = Alignment.End) {
                         Text(
                             text = Formatter.formatCurrency(item.myAmount.toLong()),
                             style = AppTypography.bodyLarge.copy(
@@ -206,203 +215,199 @@ private fun DutchPayItemCard(
                     }
                 }
             }
-
             Spacer(modifier = Modifier.height(16.dp))
-
-            // 참여 현황
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "참여 현황",
-                    style = AppTypography.bodySmall,
-                    color = Color(0xFF666666)
-                )
+                Text(text = "참여 현황", style = AppTypography.bodySmall, color = Color(0xFF666666))
                 Text(
                     text = "${item.paidCount}/${item.participantCount}명 참여",
                     style = AppTypography.bodySmall,
                     color = Color(0xFF666666)
                 )
             }
-
             Spacer(modifier = Modifier.height(8.dp))
-
-            // 애니메이션 진행률 바
             AnimatedProgressBar(
                 progress = if (item.participantCount > 0) item.paidCount.toFloat() / item.participantCount else 0f
             )
-
             Spacer(modifier = Modifier.height(12.dp))
-
-            // 하단: 요청자와 날짜
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = if (item.isCreator) "나의 요청" else "다른 사람의 요청",
+                    text = if (item.isCreator) "나의 요청" else "${item.creatorName}님의 요청",
                     style = AppTypography.bodySmall,
                     color = Color(0xFF999999)
                 )
-                
                 Text(
                     text = Formatter.formatDateTime(item.requestedAt),
                     style = AppTypography.bodySmall,
                     color = Color(0xFF999999)
                 )
             }
+            
+            // 티끌 적립 정보 표시 (tiggleAmount가 0보다 클 때만)
+            if (item.tiggleAmount > 0) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            color = Color(0xFFF0F8FF),
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "🐷",
+                        fontSize = 16.sp
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "티끌 적립",
+                        style = AppTypography.bodyMedium,
+                        color = Color(0xFF1B6BFF),
+                        modifier = Modifier.weight(1f)
+                    )
+                    AnimatedNumberCounter(
+                        targetValue = item.tiggleAmount
+                    )
+                }
+            }
         }
     }
 }
+
 
 @Composable
 private fun DutchPayStatusContent(
     summary: DutchPaySummary,
-    uiState: DutchPayStatusUiState,
+    selectedTabIndex: Int,
+    inProgressItems: List<DutchPayItem>,
+    completedItems: List<DutchPayItem>,
+    hasNextInProgress: Boolean,
+    hasNextCompleted: Boolean,
+    isLoadingMore: Boolean,
     onTabSelected: (Int) -> Unit,
-    onLoadMore: () -> Unit
+    onLoadMore: () -> Unit,
+    onItemClick: (Long) -> Unit
 ) {
     val listState = rememberLazyListState()
 
-    // 스크롤 끝에 도달하면 더 많은 데이터 로드
- 
-    LaunchedEffect(listState, uiState.selectedTabIndex) {
-        snapshotFlow { listState.layoutInfo.visibleItemsInfo }
-            .collect { visibleItems ->
-                val lastVisibleItem = visibleItems.lastOrNull()
-                if (lastVisibleItem != null) {
-                    val currentItems =
-                        if (uiState.selectedTabIndex == 0) uiState.inProgressItems else uiState.completedItems
-                    val hasNext =
-                        if (uiState.selectedTabIndex == 0) uiState.hasNextInProgress else uiState.hasNextCompleted
+    LaunchedEffect(listState, selectedTabIndex) { // selectedTabIndex가 바뀔 때도 다시 실행되도록
+        snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
+            .distinctUntilChanged()
+            .collect { lastIndex ->
+                if (lastIndex == null) return@collect
 
-                    // 마지막 아이템에 도달했고, 더 많은 데이터가 있고, 현재 로딩 중이 아닐 때만 호출
-                    if (lastVisibleItem.index >= currentItems.size - 1 && hasNext && !uiState.isLoading) {
-                        delay(500) // 0.5초 딜레이
-                        onLoadMore()
-                    }
+                val currentItems = if (selectedTabIndex == 0) inProgressItems else completedItems
+                val hasNext = if (selectedTabIndex == 0) hasNextInProgress else hasNextCompleted
+
+                // 마지막 아이템 근처에 도달했고, 다음 페이지가 있고, 로딩중이 아닐 때 호출
+                if (lastIndex >= currentItems.size - 2 && hasNext && !isLoadingMore) {
+                    onLoadMore()
                 }
             }
     }
 
-    LazyColumn(
-        state = listState,
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp)
-    ) {
-        // 상단 요약 카드
-        item {
-            Card(
+    Column(modifier = Modifier.fillMaxSize()) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+                .height(200.dp),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = TiggleBlue)
+        ) {
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = TiggleBlue)
+                    .fillMaxSize()
+                    .padding(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(20.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                Text(
+                    // ✨ 수정된 부분: .toLong()을 추가하여 타입 에러 해결
+                    text = Formatter.formatCurrency(summary.totalTransferredAmount.toLong()),
+                    fontSize = 32.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "더치페이로 모은 총 티끌",
+                    fontSize = 14.sp,
+                    color = Color.White.copy(alpha = 0.8f)
+                )
+                Spacer(modifier = Modifier.height(20.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
-                    Text(
-                        text = "${summary.totalTransferredAmount}원",
-                        fontSize = 32.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "더치페이로 모은 총 티끌",
-                        fontSize = 14.sp,
-                        color = Color.White.copy(alpha = 0.8f)
-                    )
-                    Spacer(modifier = Modifier.height(20.dp))
-
-                    // 통계 정보
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly
-                    ) {
-                        StatisticItem(
-                            value = "${summary.transferCount}회",
-                            label = "티끌 적립 횟수"
-                        )
-                        StatisticItem(
-                            value = "${summary.participatedCount}회",
-                            label = "더치페이 횟수"
-                        )
-                    }
+                    StatisticItem(value = "${summary.transferCount}회", label = "티끌 적립 횟수")
+                    StatisticItem(value = "${summary.participatedCount}회", label = "더치페이 횟수")
                 }
             }
+        }
+        Spacer(modifier = Modifier.height(8.dp))
 
-            Spacer(modifier = Modifier.height(24.dp))
+        TabRow(
+            selectedTabIndex = selectedTabIndex,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Tab(
+                selected = selectedTabIndex == 0,
+                onClick = { onTabSelected(0) },
+                text = { Text("진행중 (${inProgressItems.size})") }
+            )
+            Tab(
+                selected = selectedTabIndex == 1,
+                onClick = { onTabSelected(1) },
+                text = { Text("완료 기록 (${completedItems.size})") }
+            )
         }
 
-        // 탭 네비게이션
-        item {
-            TabRow(
-                selectedTabIndex = uiState.selectedTabIndex,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Tab(
-                    selected = uiState.selectedTabIndex == 0,
-                    onClick = { onTabSelected(0) },
-                    text = { Text("진행중 (${uiState.inProgressItems.size})") }
-                )
-                Tab(
-                    selected = uiState.selectedTabIndex == 1,
-                    onClick = { onTabSelected(1) },
-                    text = { Text("완료 기록 (${uiState.completedItems.size})") }
-                )
-            }
+        LazyColumn(
+            state = listState,
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp)
+        ) {
+            val currentItems = if (selectedTabIndex == 0) inProgressItems else completedItems
 
-            Spacer(modifier = Modifier.height(16.dp))
-        }
-
-        // 리스트 아이템들
-        val currentItems =
-            if (uiState.selectedTabIndex == 0) uiState.inProgressItems else uiState.completedItems
-
-        if (currentItems.isEmpty()) {
-            item {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "더치페이 기록이 없습니다",
-                        fontSize = 16.sp,
-                        color = Color.Gray
-                    )
-                }
-            }
-        } else {
-            items(currentItems) { item ->
-                DutchPayItemCard(
-                    item = item,
-                    isCompletedTab = uiState.selectedTabIndex == 1
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-            }
-
-            // 더보기 로딩
-            if (uiState.isLoading) {
+            if (currentItems.isEmpty() && !isLoadingMore) {
                 item {
                     Box(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
+                            .fillParentMaxHeight(0.5f)
+                            .fillMaxWidth(),
                         contentAlignment = Alignment.Center
                     ) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
-                            color = TiggleBlue
-                        )
+                        Text(text = "더치페이 기록이 없습니다", fontSize = 16.sp, color = Color.Gray)
+                    }
+                }
+            } else {
+                items(currentItems, key = { it.dutchpayId }) { item ->
+                    DutchPayItemCard(
+                        item = item,
+                        isCompletedTab = selectedTabIndex == 1,
+                        onCardClick = onItemClick
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+
+                if (isLoadingMore) {
+                    item {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(modifier = Modifier.size(24.dp), color = TiggleBlue)
+                        }
                     }
                 }
             }
@@ -410,6 +415,7 @@ private fun DutchPayStatusContent(
     }
 }
 
+// StatisticItem, AnimatedProgressBar는 변경사항 없습니다.
 @Composable
 private fun StatisticItem(
     value: String,
@@ -454,11 +460,11 @@ private fun AnimatedProgressBar(progress: Float) {
         animationSpec = tween(durationMillis = 1500),
         label = "progress"
     )
-    
+
     LaunchedEffect(Unit) {
         isVisible = true
     }
-    
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -475,16 +481,14 @@ private fun AnimatedProgressBar(progress: Float) {
                 .clip(RoundedCornerShape(4.dp))
                 .background(
                     brush = Brush.horizontalGradient(
-                        colors = listOf(
-                            Color.White,      // 흰색
-                            TiggleBlue       // 파란색
-                        )
+                        colors = listOf(Color.White, TiggleBlue)
                     )
                 )
         )
     }
 }
 
+// ✨ 수정된 부분: Preview가 새 파라미터에 맞게 값을 전달하도록 변경
 @Preview(showBackground = true)
 @Composable
 private fun DutchPayStatusScreenPreview() {
@@ -503,7 +507,9 @@ private fun DutchPayStatusScreenPreview() {
             participantCount = 3,
             paidCount = 1,
             requestedAt = "2025-08-20T12:00:00Z",
-            isCreator = true
+            isCreator = true,
+            creatorName = "나",
+            tiggleAmount = 334
         ),
         DutchPayItem(
             dutchpayId = 2L,
@@ -513,10 +519,13 @@ private fun DutchPayStatusScreenPreview() {
             participantCount = 4,
             paidCount = 3,
             requestedAt = "2025-08-20T10:30:00Z",
-            isCreator = false
+            isCreator = false,
+            creatorName = "홍길동",
+            tiggleAmount = 0
         )
     )
 
+    // Preview를 위한 샘플 상태 객체
     val sampleUiState = DutchPayStatusUiState(
         isLoading = false,
         summary = sampleSummary,
@@ -525,11 +534,18 @@ private fun DutchPayStatusScreenPreview() {
         selectedTabIndex = 0
     )
 
+    // DutchPayStatusContent 호출 시, uiState 객체 대신 개별 값들을 전달
     DutchPayStatusContent(
-        summary = sampleSummary,
-        uiState = sampleUiState,
+        summary = sampleUiState.summary!!,
+        selectedTabIndex = sampleUiState.selectedTabIndex,
+        inProgressItems = sampleUiState.inProgressItems,
+        completedItems = sampleUiState.completedItems,
+        hasNextInProgress = true, // preview용 임시값
+        hasNextCompleted = false, // preview용 임시값
+        isLoadingMore = false, // preview용 임시값
         onTabSelected = {},
-        onLoadMore = {}
+        onLoadMore = {},
+        onItemClick = {}
     )
 }
 
@@ -544,11 +560,14 @@ private fun DutchPayItemCardPreview() {
         participantCount = 3,
         paidCount = 1,
         requestedAt = "2025-08-20T12:00:00Z",
-        isCreator = true
+        isCreator = true,
+        creatorName = "나",
+        tiggleAmount = 334
     )
 
     DutchPayItemCard(
         item = sampleItem,
-        isCompletedTab = false
+        isCompletedTab = false,
+        onCardClick = {}
     )
 }

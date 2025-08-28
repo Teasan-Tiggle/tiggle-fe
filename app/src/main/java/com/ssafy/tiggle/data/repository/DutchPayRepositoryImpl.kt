@@ -8,6 +8,9 @@ import com.ssafy.tiggle.domain.entity.dutchpay.DutchPayRequestDetail
 import com.ssafy.tiggle.domain.entity.dutchpay.DutchPaySummary
 import com.ssafy.tiggle.domain.entity.dutchpay.DutchPayList
 import com.ssafy.tiggle.domain.entity.dutchpay.DutchPayItem
+import com.ssafy.tiggle.domain.entity.dutchpay.DutchPayDetail
+import com.ssafy.tiggle.domain.entity.dutchpay.Creator
+import com.ssafy.tiggle.domain.entity.dutchpay.Share
 import com.ssafy.tiggle.domain.repository.DutchPayRepository
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -59,6 +62,47 @@ class DutchPayRepositoryImpl @Inject constructor(
                         tiggleAmount = responseData.tiggleAmount,
                         payMoreDefault = responseData.payMoreDefault,
                         isCreator = responseData.creator
+                    )
+                    Result.success(detail)
+                } else {
+                    Result.failure(Exception("응답 데이터가 없습니다"))
+                }
+            } else {
+                Result.failure(Exception("더치페이 상세 조회 실패: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getDutchPayDetail(dutchPayId: Long): Result<DutchPayDetail> {
+        return try {
+            val response = dutchPayApiService.getDutchPayDetail(dutchPayId)
+
+            if (response.isSuccessful) {
+                val responseData = response.body()?.data
+                if (responseData != null) {
+                    val detail = DutchPayDetail(
+                        id = responseData.id,
+                        title = responseData.title,
+                        message = responseData.message,
+                        totalAmount = responseData.totalAmount,
+                        status = responseData.status,
+                        creator = Creator(
+                            id = responseData.creator.id,
+                            name = responseData.creator.name
+                        ),
+                        shares = responseData.shares.map { shareDto ->
+                            Share(
+                                userId = shareDto.userId,
+                                name = shareDto.name,
+                                amount = shareDto.amount,
+                                status = shareDto.status
+                            )
+                        },
+                        roundedPerPerson = responseData.roundedPerPerson,
+                        payMore = responseData.payMore,
+                        createdAt = responseData.createdAt
                     )
                     Result.success(detail)
                 } else {
@@ -127,7 +171,9 @@ class DutchPayRepositoryImpl @Inject constructor(
                             participantCount = itemDto.participantCount,
                             paidCount = itemDto.paidCount,
                             requestedAt = itemDto.requestedAt,
-                            isCreator = itemDto.isCreator
+                            isCreator = itemDto.isCreator,
+                            creatorName = itemDto.creatorName,
+                            tiggleAmount = itemDto.tiggleAmount
                         )
                     }
                     

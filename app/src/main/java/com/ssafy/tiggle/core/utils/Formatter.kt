@@ -24,6 +24,19 @@ object Formatter {
         }
     }
 
+    // 날짜만 포맷팅: "2025-08-26T01:25:21" -> "2025.08.26"
+    @SuppressLint("NewApi")
+    fun formatDate(isoDateTime: String): String {
+        return try {
+            val dateTime = LocalDateTime.parse(isoDateTime)
+            val formatter = DateTimeFormatter.ofPattern("yyyy.MM.dd")
+            dateTime.format(formatter)
+        } catch (e: DateTimeParseException) {
+            // 파싱 실패 시 원본 문자열 반환
+            isoDateTime
+        }
+    }
+
     // 간단한 날짜 포맷팅: "2025-08-26T01:25:21" -> "8월 26일"
     @SuppressLint("NewApi")
     fun formatDateOnly(isoDateTime: String): String {

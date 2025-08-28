@@ -21,6 +21,7 @@ import com.ssafy.tiggle.presentation.ui.donation.DonationStatusScreen
 import com.ssafy.tiggle.presentation.ui.dutchpay.CreateDutchPayScreen
 import com.ssafy.tiggle.presentation.ui.dutchpay.DutchpayRecieveScreen
 import com.ssafy.tiggle.presentation.ui.dutchpay.DutchPayStatusScreen
+import com.ssafy.tiggle.presentation.ui.dutchpay.DutchPayDetailScreen
 import com.ssafy.tiggle.presentation.ui.growth.GrowthScreen
 import com.ssafy.tiggle.presentation.ui.piggybank.MainAccountDetailScreen
 import com.ssafy.tiggle.presentation.ui.piggybank.OpenAccountMode
@@ -221,6 +222,16 @@ fun NavigationGraph(
 
                     is Screen.DutchPayStatus -> NavEntry(key) {
                         DutchPayStatusScreen(
+                            onBackClick = { navBackStack.removeLastOrNull() },
+                            onItemClick = { dutchPayId ->
+                                navBackStack.add(Screen.DutchPayDetail(dutchPayId))
+                            }
+                        )
+                    }
+
+                    is Screen.DutchPayDetail -> NavEntry(key) {
+                        DutchPayDetailScreen(
+                            dutchPayId = key.dutchPayId,
                             onBackClick = { navBackStack.removeLastOrNull() }
                         )
                     }

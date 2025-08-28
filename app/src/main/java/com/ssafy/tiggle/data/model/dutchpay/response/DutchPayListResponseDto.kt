@@ -18,5 +18,7 @@ data class DutchPayItemDto(
     val participantCount: Int,
     val paidCount: Int,
     val requestedAt: String,
-    val isCreator: Boolean
+    val isCreator: Boolean,
+    val creatorName: String,
+    val tiggleAmount: Int
 )
