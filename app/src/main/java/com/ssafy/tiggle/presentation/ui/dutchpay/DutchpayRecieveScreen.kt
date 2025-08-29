@@ -45,6 +45,7 @@ import com.ssafy.tiggle.presentation.ui.components.TiggleSwitchRow
 import com.ssafy.tiggle.presentation.ui.theme.AppTypography
 import com.ssafy.tiggle.presentation.ui.theme.TiggleBlue
 import com.ssafy.tiggle.presentation.ui.dutchpay.DutchPayRequestDetailViewModel
+import android.util.Log
 
 @Composable
 fun DutchpayRecieveScreen(
@@ -60,10 +61,13 @@ fun DutchpayRecieveScreen(
         viewModel.loadDutchPayDetail(dutchPayId)
     }
 
-    // payMore 상태를 detail에서 초기화
+    // payMore 상태를 detail에서 초기화 (한 번만)
     LaunchedEffect(uiState.dutchPayDetail) {
         uiState.dutchPayDetail?.let { detail ->
-            payMoreEnabled = detail.payMoreDefault
+            if (payMoreEnabled == false) { // 초기값일 때만 설정
+                payMoreEnabled = detail.payMoreDefault
+                Log.d("DutchpayRecieveScreen", "payMoreEnabled 초기화: ${detail.payMoreDefault}")
+            }
         }
     }
 
@@ -106,7 +110,10 @@ fun DutchpayRecieveScreen(
                     DutchPayPaymentContent(
                         detail = detail,
                         payMoreEnabled = payMoreEnabled,
-                        onPayMoreChanged = { payMoreEnabled = it }
+                        onPayMoreChanged = { 
+                            Log.d("DutchpayRecieveScreen", "payMoreEnabled 변경: $it")
+                            payMoreEnabled = it 
+                        }
                     )
                 }
             }
@@ -168,6 +175,9 @@ private fun DutchPayPaymentContent(
     payMoreEnabled: Boolean,
     onPayMoreChanged: (Boolean) -> Unit
 ) {
+    // payMoreEnabled에 따른 tiggleAmount 계산
+    val currentTiggleAmount = if (payMoreEnabled) detail.tiggleAmount else 0L
+    
     // 내가 낼 금액 계산
     val myPaymentAmount = if (payMoreEnabled) {
         detail.originalAmount + detail.tiggleAmount
@@ -288,7 +298,7 @@ private fun DutchPayPaymentContent(
 
                 DetailRow(label = "원래 금액", value = Formatter.formatCurrency(detail.originalAmount))
 
-                if (payMoreEnabled && detail.tiggleAmount > 0) {
+                if (payMoreEnabled && currentTiggleAmount > 0) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -301,7 +311,7 @@ private fun DutchPayPaymentContent(
                             color = Color.Gray
                         )
                         AnimatedNumberCounter(
-                            targetValue = detail.tiggleAmount
+                            targetValue = currentTiggleAmount
                         )
                     }
                 }
@@ -310,38 +320,6 @@ private fun DutchPayPaymentContent(
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        // 티끌 적립 정보 표시 (payMoreEnabled이고 tiggleAmount가 0보다 클 때만)
-        if (payMoreEnabled && detail.tiggleAmount > 0) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFF0F8FF)),
-                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "🐷",
-                        fontSize = 20.sp
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text(
-                        text = "티끌 적립",
-                        style = AppTypography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-                        color = Color(0xFF1B6BFF),
-                        modifier = Modifier.weight(1f)
-                    )
-                    AnimatedNumberCounter(
-                        targetValue = detail.tiggleAmount
-                    )
-                }
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-        }
 
         // 돈 더내고 잔돈 기부하기 스위치
         TiggleSwitchRow(

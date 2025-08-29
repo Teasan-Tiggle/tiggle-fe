@@ -15,17 +15,3 @@ data class DutchPayDetailResponseDto(
     val payMore: Boolean,
     val createdAt: String
 )
-
-@Serializable
-data class CreatorDto(
-    val id: Long,
-    val name: String
-)
-
-@Serializable
-data class ShareDto(
-    val userId: Long,
-    val name: String,
-    val amount: Int,
-    val status: String
-)
