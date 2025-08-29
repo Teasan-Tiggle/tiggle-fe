@@ -342,7 +342,6 @@ private fun AccountCard(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .height(130.dp)
             .clip(RoundedCornerShape(radius))
             .background(Color.White)
             .border(1.dp, Color(0x11000000), RoundedCornerShape(radius))

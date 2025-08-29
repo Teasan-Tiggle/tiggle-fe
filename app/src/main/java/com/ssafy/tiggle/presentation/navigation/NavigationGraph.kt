@@ -172,7 +172,8 @@ fun NavigationGraph(
                             onBackClick = { navBackStack.removeLastOrNull() },
                             onFinish = {
                                 navBackStack.removeLastOrNull()
-                            }
+                            },
+                            isEdit = key.isEdit
                         )
                     }
 
