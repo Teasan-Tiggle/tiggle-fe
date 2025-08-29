@@ -217,7 +217,7 @@ private fun DutchPayItemCard(
                             )
                         )
                         Text(
-                            text = "${item.participantCount}명 참여",
+                            text = "총 ${item.participantCount}명",
                             style = AppTypography.bodySmall,
                             color = Color(0xFF666666)
                         )
