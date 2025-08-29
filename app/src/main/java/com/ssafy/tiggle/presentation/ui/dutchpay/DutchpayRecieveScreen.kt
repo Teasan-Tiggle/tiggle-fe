@@ -139,9 +139,18 @@ private fun AnimatedNumberCounter(
     targetValue: Long,
     modifier: Modifier = Modifier
 ) {
+    var isVisible by remember { mutableStateOf(false) }
+    
+    LaunchedEffect(Unit) {
+        isVisible = true
+    }
+    
     val animatedValue by animateIntAsState(
-        targetValue = targetValue.toInt(),
-        animationSpec = tween(durationMillis = 1000),
+        targetValue = if (isVisible) targetValue.toInt() else 0,
+        animationSpec = tween(
+            durationMillis = 1000,
+            easing = androidx.compose.animation.core.LinearEasing
+        ),
         label = "number_animation"
     )
     

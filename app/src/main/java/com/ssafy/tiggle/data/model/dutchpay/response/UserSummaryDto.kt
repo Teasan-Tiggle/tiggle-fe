@@ -7,10 +7,14 @@ import com.ssafy.tiggle.domain.entity.dutchpay.UserSummary
  */
 data class UserSummaryDto(
     val id: Long,
-    val name: String
+    val name: String,
+    val university: String? = null,
+    val department: String? = null
 ) {
     fun toDomain(): UserSummary = UserSummary(
         id = id,
-        name = name
+        name = name,
+        university = university,
+        department = department
     )
 }

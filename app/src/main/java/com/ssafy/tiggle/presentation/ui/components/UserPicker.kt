@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -35,15 +36,20 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ssafy.tiggle.R
 import com.ssafy.tiggle.domain.entity.dutchpay.UserSummary
+import com.ssafy.tiggle.presentation.ui.theme.AppTypography
 import com.ssafy.tiggle.presentation.ui.theme.TiggleBlue
+import com.ssafy.tiggle.presentation.ui.theme.TiggleBlueLight
 import com.ssafy.tiggle.presentation.ui.theme.TiggleGrayLight
 import com.ssafy.tiggle.presentation.ui.theme.TiggleGrayText
+import com.ssafy.tiggle.presentation.ui.theme.TiggleSkyBlue
 
 @Composable
 fun UserPicker(
@@ -123,39 +129,93 @@ private fun UserRow(user: UserSummary, isSelected: Boolean, onClick: () -> Unit)
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() }
-            .padding(horizontal = 12.dp, vertical = 14.dp),
+            .padding(horizontal = 16.dp, vertical = 16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // 아바타 (이니셜)
+        // 아바타 (둥근 사각형)
         Box(
             modifier = Modifier
-                .size(32.dp)
+                .size(48.dp)
+                .clip(RoundedCornerShape(12.dp))
                 .background(
-                    color = if (isSelected) TiggleBlue else TiggleGrayLight,
-                    shape = CircleShape
+                    color = if (isSelected) TiggleBlue else TiggleGrayLight
                 ),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = user.name.firstOrNull()?.toString() ?: "?",
                 color = if (isSelected) Color.White else Color.Black,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                style = AppTypography.titleMedium
             )
         }
 
         Column(
             modifier = Modifier
                 .weight(1f)
-                .padding(start = 12.dp)
+                .padding(start = 16.dp)
         ) {
-            Text(text = user.name, color = Color.Black)
+            Text(
+                text = user.name,
+                color = Color.Black,
+                fontWeight = FontWeight.Medium,
+                style = AppTypography.bodyLarge
+            )
+            
+            // 학교와 학과 정보
+            if (user.university != null || user.department != null) {
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    text = buildString {
+                        if (user.university != null) {
+                            append(user.university)
+                        }
+                        if (user.university != null && user.department != null) {
+                            append(" • ")
+                        }
+                        if (user.department != null) {
+                            append(user.department)
+                        }
+                    },
+                    color = TiggleGrayText,
+                    style = AppTypography.bodySmall,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
         }
 
-        Icon(
-            painter = androidx.compose.ui.res.painterResource(id = R.drawable.check),
-            contentDescription = null,
-            tint = if (isSelected) TiggleBlue else TiggleGrayText
-        )
+        // 선택 상태 표시 (TiggleSkyBlue 원형 버튼)
+        Box(
+            modifier = Modifier
+                .size(24.dp)
+                .clip(CircleShape)
+                .background(
+                    color = if (isSelected) TiggleBlueLight else Color.White
+                )
+                .padding(2.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            if (isSelected) {
+                Icon(
+                    imageVector = Icons.Default.Check,
+                    contentDescription = "selected",
+                    tint = Color.White,
+                    modifier = Modifier.size(16.dp)
+                )
+            } else {
+                // 선택되지 않은 상태의 테두리 (동일한 크기 유지)
+                Box(
+                    modifier = Modifier
+                        .size(20.dp)
+                        .clip(CircleShape)
+                        .background(
+                            color = TiggleGrayText.copy(alpha = 0.3f),
+                            shape = CircleShape
+                        )
+                )
+            }
+        }
     }
 }
 
@@ -167,7 +227,7 @@ private fun SelectedUserChip(name: String, onRemove: () -> Unit, modifier: Modif
             .padding(horizontal = 10.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(text = name, style = MaterialTheme.typography.bodySmall)
+        Text(text = name, style = AppTypography.bodySmall)
         Spacer(Modifier.size(6.dp))
         Box(
             modifier = Modifier
