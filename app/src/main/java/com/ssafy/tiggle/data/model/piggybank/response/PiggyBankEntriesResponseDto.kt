@@ -15,7 +15,7 @@ data class PiggyBankEntryItem(
     val id: String,
     val type: String,
     val amount: Long,
-    val occurredAt: String,
+    val occurredDate: String,
     val title: String
 )
 
@@ -30,6 +30,6 @@ fun PiggyBankEntryItem.toDomain(): PiggyBankEntry =
         id = id,
         type = type,
         amount = amount,
-        occurredAt = occurredAt,
+        occurredAt = occurredDate,
         title = title
     )
