@@ -112,7 +112,6 @@ fun PiggyBankScreen(
         )
 
         Spacer(Modifier.height(50.dp))
-        Spacer(Modifier.height(50.dp))
 
         if (uiState.hasPiggyBank) {
             TodaySavingBanner(uiState = uiState, onClick = onShowPiggyBankDetailClick)
@@ -281,7 +280,7 @@ private fun TodaySavingBanner(uiState: PiggyBankState, onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(130.dp)
+            .height(150.dp)
             .clip(RoundedCornerShape(radius))
             .background(
                 brush = Brush.horizontalGradient(
@@ -304,7 +303,7 @@ private fun TodaySavingBanner(uiState: PiggyBankState, onClick: () -> Unit) {
                 )
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    "${uiState.piggyBankAccount.currentAmount}원",
+                    "${formatAmount(uiState.piggyBankAccount.currentAmount)}원",
                     color = Color.White,
                     fontSize = 34.sp,
                     fontWeight = FontWeight.ExtraBold

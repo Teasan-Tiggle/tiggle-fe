@@ -102,7 +102,7 @@ fun MainAccountDetailScreen(
 fun TransactionItem(tx: DomainTransaction) {
     val borderColor = Color(0xFFE0E0E0) // 캡처 느낌의 연한 회색 테두리
     val timeTextColor = Color(0xFF9AA3AD) // 연한 회색 텍스트
-    val amountColor = if (tx.transactionType == "출금") Color(0xFFD32F2F) else TiggleBlue
+    val amountColor = if (tx.transactionType == "출금(이체)") Color(0xFFD32F2F) else TiggleBlue
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -138,7 +138,7 @@ fun TransactionItem(tx: DomainTransaction) {
                 // 금액 (+/-)
                 Text(
                     text = buildString {
-                        append(if (tx.transactionType == "출금") "- " else "+ ")
+                        append(if (tx.transactionType == "출금(이체)") "- " else "+ ")
                         append("${formatAmount(tx.amount.toLong())}원")
                     },
                     fontSize = 18.sp,

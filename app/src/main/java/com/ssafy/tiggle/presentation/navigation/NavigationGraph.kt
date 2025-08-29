@@ -199,6 +199,7 @@ fun NavigationGraph(
                     is Screen.MainAccountDetail -> NavEntry(key) {
                         MainAccountDetailScreen(
                             accountNo = key.accountNo,
+                            onBackClick = {navBackStack.removeLastOrNull()}
                         )
                     }
 
