@@ -10,7 +10,8 @@ data class DutchPayDetail(
     val shares: List<Share>,
     val roundedPerPerson: Int?,
     val payMore: Boolean,
-    val createdAt: String
+    val createdAt: String,
+    val requestUserId: Long
 )
 
 data class Creator(

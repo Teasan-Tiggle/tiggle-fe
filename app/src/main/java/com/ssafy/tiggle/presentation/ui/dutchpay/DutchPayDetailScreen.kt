@@ -13,11 +13,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -63,7 +67,7 @@ fun DutchPayDetailScreen(
         showBackButton = true,
         title = "더치페이 현황",
         onBackClick = onBackClick,
-        enableScroll = true
+        enableScroll = false
     ) {
         when {
             uiState.isLoading -> {
@@ -106,10 +110,13 @@ private fun DutchPayDetailContent(
     detail: DutchPayDetail,
     onPaymentClick: () -> Unit
 ) {
-    var selectedTab by remember { mutableStateOf("PENDING") } // 기본값은 정산 미완료
+    var selectedTabIndex by remember { mutableStateOf(1) } // 기본값은 정산 미완료 (인덱스 1)
     
     // 현재 사용자가 미정산 상태인지 확인 (PENDING 상태인 share가 있는지)
     val currentUserPendingShare = detail.shares.find { it.status == "PENDING" }
+    
+    // 탭 인덱스를 상태 문자열로 변환
+    val selectedTab = if (selectedTabIndex == 0) "PAID" else "PENDING"
     
     Column(
         modifier = Modifier
@@ -120,7 +127,7 @@ private fun DutchPayDetailContent(
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5)),
+            colors = CardDefaults.cardColors(containerColor = TiggleBlue),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
         ) {
             Column(
@@ -129,27 +136,25 @@ private fun DutchPayDetailContent(
             ) {
                 Text(
                     text = "${detail.shares.size}명 참여",
-                    style = AppTypography.bodyMedium,
-                    color = Color(0xFF666666)
+                    fontSize = 14.sp,
+                    color = Color.White.copy(alpha = 0.8f)
                 )
                 
                 Spacer(modifier = Modifier.height(8.dp))
                 
                 Text(
                     text = Formatter.formatCurrency(detail.totalAmount.toLong()),
-                    style = AppTypography.headlineLarge.copy(
-                        fontSize = 32.sp,
-                        fontWeight = FontWeight.Bold
-                    ),
-                    color = Color.Black
+                    fontSize = 32.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
                 )
                 
                 Spacer(modifier = Modifier.height(8.dp))
                 
                 Text(
                     text = "요청일 ${Formatter.formatDate(detail.createdAt)}",
-                    style = AppTypography.bodySmall,
-                    color = Color(0xFF999999)
+                    fontSize = 14.sp,
+                    color = Color.White.copy(alpha = 0.8f)
                 )
                 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -180,67 +185,45 @@ private fun DutchPayDetailContent(
         Spacer(modifier = Modifier.height(16.dp))
         
         // 탭 (선택 가능)
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Color(0xFFF5F5F5), RoundedCornerShape(8.dp))
-                .padding(4.dp)
+        val completedCount = detail.shares.count { it.status == "PAID" }
+        val pendingCount = detail.shares.count { it.status == "PENDING" }
+        
+        TabRow(
+            selectedTabIndex = selectedTabIndex,
+            modifier = Modifier.fillMaxWidth()
         ) {
-            // 정산 완료 탭
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .background(
-                        color = if (selectedTab == "PAID") Color.White else Color.Transparent,
-                        shape = RoundedCornerShape(6.dp)
-                    )
-                    .clickable { selectedTab = "PAID" }
-                    .padding(vertical = 12.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                val completedCount = detail.shares.count { it.status == "PAID" }
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = "${completedCount}명",
-                        style = AppTypography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                        color = if (selectedTab == "PAID") TiggleBlue else Color(0xFF666666)
-                    )
-                    Text(
-                        text = "정산 완료",
-                        style = AppTypography.bodySmall,
-                        color = if (selectedTab == "PAID") TiggleBlue else Color(0xFF999999)
-                    )
-                }
-            }
-            
-            // 정산 미완료 탭
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .background(
-                        color = if (selectedTab == "PENDING") Color.White else Color.Transparent,
-                        shape = RoundedCornerShape(6.dp)
-                    )
-                    .clickable { selectedTab = "PENDING" }
-                    .padding(vertical = 12.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                val pendingCount = detail.shares.count { it.status == "PENDING" }
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = "${pendingCount}명",
-                        style = AppTypography.bodyMedium.copy(
-                            fontWeight = FontWeight.Medium,
-                            color = if (selectedTab == "PENDING") TiggleBlue else Color(0xFF666666)
+            Tab(
+                selected = selectedTabIndex == 0,
+                onClick = { selectedTabIndex = 0 },
+                text = { 
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = "${completedCount}명",
+                            style = AppTypography.bodyMedium.copy(fontWeight = FontWeight.Medium)
                         )
-                    )
-                    Text(
-                        text = "정산 미완료",
-                        style = AppTypography.bodySmall,
-                        color = if (selectedTab == "PENDING") TiggleBlue else Color(0xFF999999)
-                    )
+                        Text(
+                            text = "정산 완료",
+                            style = AppTypography.bodySmall
+                        )
+                    }
                 }
-            }
+            )
+            Tab(
+                selected = selectedTabIndex == 1,
+                onClick = { selectedTabIndex = 1 },
+                text = { 
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = "${pendingCount}명",
+                            style = AppTypography.bodyMedium.copy(fontWeight = FontWeight.Medium)
+                        )
+                        Text(
+                            text = "정산 미완료",
+                            style = AppTypography.bodySmall
+                        )
+                    }
+                }
+            )
         }
         
         Spacer(modifier = Modifier.height(16.dp))
@@ -250,35 +233,43 @@ private fun DutchPayDetailContent(
         // 참여자 목록 (선택된 탭에 따라 표시)
         val selectedShares = detail.shares.filter { it.status == selectedTab }
         
-        if (selectedShares.isNotEmpty()) {
-            selectedShares.forEach { share ->
-                ParticipantItem(
-                    name = share.name,
-                    amount = share.amount.toLong(),
-                    tiggleAmount = share.tiggleAmount?.toLong() ?: 0L,
-                    status = share.status,
-                    isCurrentUser = share.status == "PENDING", // PENDING 상태인 사용자가 현재 사용자
-                    onPaymentClick = onPaymentClick
-                )
-                if (share != selectedShares.last()) {
-                    HorizontalDivider(
-                        modifier = Modifier.padding(vertical = 8.dp),
-                        color = Color(0xFFE0E0E0)
-                    )
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 8.dp)
+        ) {
+            if (selectedShares.isEmpty()) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = if (selectedTab == "PAID") "정산 완료인 참여자가 없습니다" else "정산 미완료인 참여자가 없습니다",
+                            style = AppTypography.bodyMedium,
+                            color = Color(0xFF999999)
+                        )
+                    }
                 }
-            }
-        } else {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 32.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = if (selectedTab == "PAID") "정산 완료인 참여자가 없습니다" else "정산 미완료인 참여자가 없습니다",
-                    style = AppTypography.bodyMedium,
-                    color = Color(0xFF999999)
-                )
+            } else {
+                items(selectedShares, key = { it.userId }) { share ->
+                    ParticipantItem(
+                        name = share.name,
+                        amount = share.amount.toLong(),
+                        tiggleAmount = share.tiggleAmount?.toLong() ?: 0L,
+                        status = share.status,
+                        isCurrentUser = share.userId == detail.requestUserId, // requestUserId와 일치하는 사용자가 현재 사용자
+                        onPaymentClick = onPaymentClick
+                    )
+                    
+                    if (share != selectedShares.last()) {
+                        HorizontalDivider(
+                            modifier = Modifier.padding(vertical = 8.dp),
+                            color = Color(0xFFE0E0E0)
+                        )
+                    }
+                }
             }
         }
     }
@@ -295,9 +286,10 @@ private fun StatusItem(
             .width(120.dp)
             .height(60.dp),
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = backgroundColor),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-    ) {
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White.copy(alpha = 0.2f)
+        )
+    )  {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -307,12 +299,15 @@ private fun StatusItem(
         ) {
             Text(
                 text = "${count}명",
-                style = AppTypography.bodyMedium.copy(fontWeight = FontWeight.Bold)
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
             )
             Text(
                 text = label,
                 style = AppTypography.bodySmall,
-                color = Color(0xFF666666)
+                fontSize = 12.sp,
+                color = Color.White.copy(alpha = 0.8f)
             )
         }
     }
@@ -453,7 +448,8 @@ private fun DutchPayDetailScreenPreview() {
         ),
         roundedPerPerson = null,
         payMore = false,
-        createdAt = "2025-08-28T12:46:16"
+        createdAt = "2025-08-28T12:46:16",
+        requestUserId = 10L // jiwon이 현재 사용자
     )
     
     DutchPayDetailContent(detail = sampleDetail, onPaymentClick = {})

@@ -107,7 +107,8 @@ class DutchPayRepositoryImpl @Inject constructor(
                         },
                         roundedPerPerson = responseData.roundedPerPerson,
                         payMore = responseData.payMore,
-                        createdAt = responseData.createdAt
+                        createdAt = responseData.createdAt,
+                        requestUserId = responseData.requestUserId
                     )
                     Result.success(detail)
                 } else {

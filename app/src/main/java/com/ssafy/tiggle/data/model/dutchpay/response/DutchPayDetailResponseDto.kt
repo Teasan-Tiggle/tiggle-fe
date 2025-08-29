@@ -13,5 +13,6 @@ data class DutchPayDetailResponseDto(
     val shares: List<ShareDto>,
     val roundedPerPerson: Int?,
     val payMore: Boolean,
-    val createdAt: String
+    val createdAt: String,
+    val requestUserId: Long
 )
