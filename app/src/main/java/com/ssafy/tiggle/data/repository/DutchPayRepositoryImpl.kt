@@ -101,6 +101,7 @@ class DutchPayRepositoryImpl @Inject constructor(
                                 userId = shareDto.userId,
                                 name = shareDto.name,
                                 amount = shareDto.amount.toInt(),
+                                tiggleAmount = shareDto.tiggleAmount?.toInt(),
                                 status = shareDto.status
                             )
                         },

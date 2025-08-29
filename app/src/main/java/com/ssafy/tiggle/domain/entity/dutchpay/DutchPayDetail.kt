@@ -22,5 +22,6 @@ data class Share(
     val userId: Long,
     val name: String,
     val amount: Int,
+    val tiggleAmount: Int? = null,
     val status: String
 )

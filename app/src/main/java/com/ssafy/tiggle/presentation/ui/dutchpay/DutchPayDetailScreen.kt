@@ -40,6 +40,8 @@ import com.ssafy.tiggle.core.utils.Formatter
 import com.ssafy.tiggle.domain.entity.dutchpay.DutchPayDetail
 import com.ssafy.tiggle.domain.entity.dutchpay.Creator
 import com.ssafy.tiggle.domain.entity.dutchpay.Share
+import com.ssafy.tiggle.presentation.ui.components.TiggleButton
+import com.ssafy.tiggle.presentation.ui.components.TiggleButtonVariant
 import com.ssafy.tiggle.presentation.ui.components.TiggleScreenLayout
 import com.ssafy.tiggle.presentation.ui.theme.AppTypography
 import com.ssafy.tiggle.presentation.ui.theme.TiggleBlue
@@ -48,6 +50,7 @@ import com.ssafy.tiggle.presentation.ui.theme.TiggleBlue
 fun DutchPayDetailScreen(
     dutchPayId: Long,
     onBackClick: () -> Unit,
+    onPaymentClick: () -> Unit = {},
     viewModel: DutchPayDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -89,15 +92,24 @@ fun DutchPayDetailScreen(
             }
 
             uiState.dutchPayDetail != null -> {
-                DutchPayDetailContent(detail = uiState.dutchPayDetail!!)
+                DutchPayDetailContent(
+                    detail = uiState.dutchPayDetail!!,
+                    onPaymentClick = onPaymentClick
+                )
             }
         }
     }
 }
 
 @Composable
-private fun DutchPayDetailContent(detail: DutchPayDetail) {
+private fun DutchPayDetailContent(
+    detail: DutchPayDetail,
+    onPaymentClick: () -> Unit
+) {
     var selectedTab by remember { mutableStateOf("PENDING") } // 기본값은 정산 미완료
+    
+    // 현재 사용자가 미정산 상태인지 확인 (PENDING 상태인 share가 있는지)
+    val currentUserPendingShare = detail.shares.find { it.status == "PENDING" }
     
     Column(
         modifier = Modifier
@@ -233,6 +245,8 @@ private fun DutchPayDetailContent(detail: DutchPayDetail) {
         
         Spacer(modifier = Modifier.height(16.dp))
         
+
+        
         // 참여자 목록 (선택된 탭에 따라 표시)
         val selectedShares = detail.shares.filter { it.status == selectedTab }
         
@@ -241,7 +255,10 @@ private fun DutchPayDetailContent(detail: DutchPayDetail) {
                 ParticipantItem(
                     name = share.name,
                     amount = share.amount.toLong(),
-                    status = share.status
+                    tiggleAmount = share.tiggleAmount?.toLong() ?: 0L,
+                    status = share.status,
+                    isCurrentUser = share.status == "PENDING", // PENDING 상태인 사용자가 현재 사용자
+                    onPaymentClick = onPaymentClick
                 )
                 if (share != selectedShares.last()) {
                     HorizontalDivider(
@@ -305,47 +322,117 @@ private fun StatusItem(
 private fun ParticipantItem(
     name: String,
     amount: Long,
-    status: String
+    tiggleAmount: Long,
+    status: String,
+    isCurrentUser: Boolean = false,
+    onPaymentClick: () -> Unit = {}
 ) {
-    Row(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+            .padding(vertical = 8.dp)
     ) {
         Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = name,
-                style = AppTypography.bodyMedium,
-                color = Color.Black
-            )
-            
-            // 상태 표시
-            Box(
-                modifier = Modifier
-                    .background(
-                        color = if (status == "PAID") Color(0xFFE8F5E8) else Color(0xFFFFF3E0),
-                        shape = RoundedCornerShape(4.dp)
-                    )
-                    .padding(horizontal = 8.dp, vertical = 4.dp)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Text(
-                    text = if (status == "PAID") "완료" else "대기",
+                    text = name,
+                    style = AppTypography.bodyMedium,
+                    color = Color.Black
+                )
+                
+                // 상태 표시 (현재 사용자가 미정산 상태일 때는 정산하기 버튼, 그 외에는 상태 표시)
+                if (isCurrentUser && status == "PENDING") {
+                    Box(
+                        modifier = Modifier
+                            .background(
+                                color = TiggleBlue.copy(alpha = 0.1f),
+                                shape = RoundedCornerShape(12.dp)
+                            )
+                            .clickable { onPaymentClick() }
+                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            text = "정산하기",
+                            style = AppTypography.bodySmall.copy(fontWeight = FontWeight.Medium),
+                            color = TiggleBlue,
+                            fontSize = 10.sp
+                        )
+                    }
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .background(
+                                color = if (status == "PAID") Color(0xFFE8F5E8) else Color(0xFFFFF3E0),
+                                shape = RoundedCornerShape(4.dp)
+                            )
+                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            text = if (status == "PAID") "완료" else "대기",
+                            style = AppTypography.bodySmall,
+                            color = if (status == "PAID") Color(0xFF2E7D32) else Color(0xFFF57C00)
+                        )
+                    }
+                }
+            }
+            
+            // 기본 금액
+            Text(
+                text = Formatter.formatCurrency(amount),
+                style = AppTypography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                color = Color.Black
+            )
+        }
+        
+        // tiggleAmount가 0이 아닐 때만 표시
+        if (tiggleAmount > 0) {
+            Spacer(modifier = Modifier.height(4.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "🐷 티끌 적립",
                     style = AppTypography.bodySmall,
-                    color = if (status == "PAID") Color(0xFF2E7D32) else Color(0xFFF57C00)
+                    color = Color(0xFF666666)
+                )
+                Text(
+                    text = "+ ${Formatter.formatCurrency(tiggleAmount)}",
+                    style = AppTypography.bodySmall.copy(fontWeight = FontWeight.Medium),
+                    color = TiggleBlue
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(4.dp))
+            HorizontalDivider(color = Color(0xFFE0E0E0))
+            Spacer(modifier = Modifier.height(4.dp))
+            
+            // 총 금액
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "정산 금액",
+                    style = AppTypography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                    color = Color.Black
+                )
+                Text(
+                    text = Formatter.formatCurrency(amount + tiggleAmount),
+                    style = AppTypography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                    color = TiggleBlue
                 )
             }
         }
-        
-        Text(
-            text = Formatter.formatCurrency(amount),
-            style = AppTypography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-            color = Color.Black
-        )
     }
 }
 
@@ -360,14 +447,14 @@ private fun DutchPayDetailScreenPreview() {
         status = "REQUESTED",
         creator = Creator(id = 1L, name = "김테스트"),
         shares = listOf(
-            Share(userId = 1L, name = "김테스트", amount = 3703, status = "PAID"),
-            Share(userId = 2L, name = "박테스트", amount = 3704, status = "PAID"),
-            Share(userId = 10L, name = "jiwon", amount = 3704, status = "PENDING")
+            Share(userId = 1L, name = "김테스트", amount = 3703, tiggleAmount = 297, status = "PAID"),
+            Share(userId = 2L, name = "박테스트", amount = 3704, tiggleAmount = 296, status = "PAID"),
+            Share(userId = 10L, name = "jiwon", amount = 3704, tiggleAmount = 296, status = "PENDING")
         ),
         roundedPerPerson = null,
         payMore = false,
         createdAt = "2025-08-28T12:46:16"
     )
     
-    DutchPayDetailContent(detail = sampleDetail)
+    DutchPayDetailContent(detail = sampleDetail, onPaymentClick = {})
 }

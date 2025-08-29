@@ -26,5 +26,5 @@ data class ShareDto(
     val name: String,
     val amount: Long,
     val status: String,
-    val tiggleAmount: Long
+    val tiggleAmount: Long?
 )
