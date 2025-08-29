@@ -49,7 +49,7 @@ fun MainAccountDetailScreen(
 
     TiggleScreenLayout(
         showBackButton = true,
-        title = "오늘 모인 티끌",
+        title = "나의 계좌 입출금",
         onBackClick = onBackClick,
         contentPadding = PaddingValues(0.dp),
         enableScroll = false
