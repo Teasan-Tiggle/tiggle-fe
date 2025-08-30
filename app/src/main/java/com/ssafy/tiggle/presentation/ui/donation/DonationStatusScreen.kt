@@ -663,11 +663,15 @@ private fun DonationProgressItem(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
+                // 진행률이 낮을 때는 검은색 텍스트, 높을 때는 흰색 텍스트 사용
+                val textColor = Color.Black
+                
                 Text(
                     text = Formatter.formatCurrency(amount.toLong()),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White
+                    color = textColor,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                 )
             }
         }
