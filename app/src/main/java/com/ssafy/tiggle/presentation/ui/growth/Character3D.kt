@@ -2,29 +2,44 @@ package com.ssafy.tiggle.presentation.ui.growth
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
 import android.view.Choreographer
 import android.view.MotionEvent
 import android.view.SurfaceView
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.viewinterop.AndroidView
 import com.google.android.filament.EntityManager
 import com.google.android.filament.LightManager
+import com.google.android.filament.gltfio.Animator
+import com.google.android.filament.gltfio.FilamentAsset
 import com.google.android.filament.gltfio.ResourceLoader
 import com.google.android.filament.utils.ModelViewer
 import com.google.android.filament.utils.Utils
+import com.ssafy.tiggle.R
+import kotlinx.coroutines.delay
 import java.io.IOException
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import kotlin.math.PI
 
 /**
- * 레벨에 따라 다른 GLB를 로드하는 3D 캐릭터 컴포저블
+ * 레벨에 따라 다른 GLB를 로드하는 3D 캐릭터 컴포저블 (이미지 플레이스홀더 사용)
  */
 // 전역 변수
 private var baseTransform: FloatArray? = null
@@ -44,95 +59,229 @@ fun Character3D(
     val context = LocalContext.current
     var modelViewer by remember { mutableStateOf<ModelViewer?>(null) }
     var currentLevel by remember { mutableStateOf(level) }
+    var isModelLoaded by remember { mutableStateOf(false) }
+    var shouldStartLoading by remember { mutableStateOf(false) }
 
-    // 렌더링 프레임 콜백
-    val choreographer = remember { Choreographer.getInstance() }
-    val frameCallback = remember {
-        object : Choreographer.FrameCallback {
-            override fun doFrame(frameTimeNanos: Long) {
-                // ── 애니메이션이 있으면 시간계산해서 적용 ──
-                modelViewer?.let { mv ->
-                    val animator = mv.animator
-                    if (animIndex >= 0 && animator != null && animator.animationCount > 0) {
-                        if (animStartNanos < 0L) animStartNanos = frameTimeNanos
-                        val tSec = ((frameTimeNanos - animStartNanos) / 1_000_000_000.0f)
-                        // duration이 0일 가능성 방지
-                        val dur = if (animDurationSec > 1e-4f) animDurationSec else 1f
-                        val loopTime = (tSec % dur)
-                        animator.applyAnimation(animIndex, loopTime)
-                        animator.updateBoneMatrices()
-                    }
-                }
-                modelViewer?.render(frameTimeNanos)
-                choreographer.postFrameCallback(this)
-            }
+    // 페이드 애니메이션
+    val alpha by animateFloatAsState(
+        targetValue = if (isModelLoaded) 1f else 0f,
+        animationSpec = tween(durationMillis = 300),
+        label = "model_fade"
+    )
+
+    // 컴포지션 완료 후 로딩 시작
+    LaunchedEffect(Unit) {
+        delay(50) // UI 렌더링 후 모델 로딩 시작
+        shouldStartLoading = true
+    }
+
+    // 레벨 변경 시 로딩 상태 리셋
+    LaunchedEffect(level) {
+        if (currentLevel != level) {
+            isModelLoaded = false
+            currentLevel = level
         }
     }
 
-    AndroidView(
-        modifier = modifier,
-        factory = { ctx ->
-            val surfaceView = SurfaceView(ctx)
-
-            // SurfaceView 투명 설정
-            surfaceView.holder.setFormat(android.graphics.PixelFormat.TRANSLUCENT)
-            surfaceView.setZOrderOnTop(false) // 다른 뷰 뒤에 배치
-
-            try {
-                // Filament 초기화
-                Utils.init()
-
-                // ModelViewer 생성 (기본 생성자 사용)
-                val viewer = ModelViewer(surfaceView)
-                modelViewer = viewer
-
-                // 투명 배경 설정
-                setupTransparentBackground(viewer)
-
-                // 개선된 조명 설정
-                setupFrontLight(viewer)
-
-                // 터치 이벤트 처리 - 직접 구현
-                if (enableOrbit) {
-                    enableHorizontalDragRotation(surfaceView, viewer)
-                }
-
-                // 모델 로드
-                loadModelForLevel(ctx, viewer, level)
-
-                // 렌더링 시작
-                choreographer.postFrameCallback(frameCallback)
-
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-
-            surfaceView
-        },
-        update = { _ ->
-            // 레벨 변경 시 모델 재로드
-            if (currentLevel != level) {
-                currentLevel = level
-                modelViewer?.let { viewer ->
-                    loadModelForLevel(context, viewer, level)
-                }
-            }
-        },
-        onRelease = {
-            choreographer.removeFrameCallback(frameCallback)
-            modelViewer = null
+    Box(modifier = modifier) {
+        // 이미지 플레이스홀더 (모델 로딩 전/중)
+        if (!isModelLoaded) {
+            Image(
+                painter = painterResource(id = R.drawable.heart),
+                contentDescription = "캐릭터",
+                modifier = Modifier
+                    .fillMaxSize()
+                    .alpha(1f - alpha),
+                contentScale = ContentScale.Fit
+            )
         }
+
+        // 3D 모델 뷰
+        if (shouldStartLoading) {
+            // 렌더링 프레임 콜백
+            val choreographer = remember { Choreographer.getInstance() }
+            val frameCallback = remember {
+                object : Choreographer.FrameCallback {
+                    override fun doFrame(frameTimeNanos: Long) {
+                        // ── 애니메이션이 있으면 시간계산해서 적용 ──
+                        modelViewer?.let { mv ->
+                            val animator = mv.animator
+                            if (animIndex >= 0 && animator != null && animator.animationCount > 0) {
+                                if (animStartNanos < 0L) animStartNanos = frameTimeNanos
+                                val tSec = ((frameTimeNanos - animStartNanos) / 1_000_000_000.0f)
+                                // duration이 0일 가능성 방지
+                                val dur = if (animDurationSec > 1e-4f) animDurationSec else 1f
+                                val loopTime = (tSec % dur)
+                                animator.applyAnimation(animIndex, loopTime)
+                                animator.updateBoneMatrices()
+                            }
+                        }
+                        modelViewer?.render(frameTimeNanos)
+                        choreographer.postFrameCallback(this)
+                    }
+                }
+            }
+
+            AndroidView(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .alpha(alpha),
+                factory = { ctx ->
+                    val surfaceView = SurfaceView(ctx)
+
+                    // SurfaceView 투명 설정
+                    surfaceView.holder.setFormat(android.graphics.PixelFormat.TRANSLUCENT)
+                    surfaceView.setZOrderOnTop(false) // 다른 뷰 뒤에 배치
+
+                    try {
+                        // Filament 초기화
+                        Utils.init()
+
+                        // ModelViewer 생성 (기본 생성자 사용)
+                        val viewer = ModelViewer(surfaceView)
+                        modelViewer = viewer
+
+                        // 투명 배경 설정
+                        setupTransparentBackground(viewer)
+
+                        // 개선된 조명 설정
+                        setupFrontLight(viewer)
+
+                        // 터치 이벤트 처리 - 직접 구현
+                        if (enableOrbit) {
+                            enableHorizontalDragRotation(surfaceView, viewer)
+                        }
+
+                        // 비동기로 모델 로드
+                        loadModelAsync(ctx, viewer, level) {
+                            isModelLoaded = true
+                        }
+
+                        // 렌더링 시작
+                        choreographer.postFrameCallback(frameCallback)
+
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+
+                    surfaceView
+                },
+                update = { _ ->
+                    // 레벨 변경 시 모델 재로드
+                    if (currentLevel != level) {
+                        currentLevel = level
+                        isModelLoaded = false
+                        modelViewer?.let { viewer ->
+                            loadModelAsync(context, viewer, level) {
+                                isModelLoaded = true
+                            }
+                        }
+                    }
+                },
+                onRelease = {
+                    choreographer.removeFrameCallback(frameCallback)
+                    modelViewer = null
+                    isModelLoaded = false
+                }
+            )
+        }
+    }
+}
+
+/**
+ * 비동기 모델 로딩 (콜백으로 완료 알림)
+ */
+private fun loadModelAsync(
+    context: Context,
+    modelViewer: ModelViewer,
+    level: Int,
+    onLoadComplete: () -> Unit
+) {
+    // 백그라운드 스레드에서 모델 로딩
+    Thread {
+        try {
+            val assetPath = LevelModels.assetPathFor(level)
+            val buffer = readAssetFile(context, assetPath)
+
+            if (buffer != null) {
+                // 메인 스레드에서 Filament 작업 수행
+                Handler(Looper.getMainLooper()).post {
+                    try {
+                        modelViewer.loadModelGlb(buffer)
+
+                        // 리소스 로더 호출 (텍스처/머티리얼 GPU 업로드)
+                        modelViewer.asset?.let { asset ->
+                            ResourceLoader(modelViewer.engine).loadResources(asset)
+                        }
+
+                        val asset = modelViewer.asset
+                        val animator = modelViewer.animator
+                        val animationCount = animator?.animationCount ?: 0
+                        val hasAnimation = animationCount > 0
+
+                        if (hasAnimation) {
+                            setupAnimatedModel(modelViewer, asset!!, animator!!)
+                        } else {
+                            // 기존처럼 모델 크기 정규화
+                            modelViewer.transformToUnitCube()
+                        }
+
+                        // root 트랜스폼 저장
+                        saveBaseTransform(modelViewer)
+
+                        // 로딩 완료 콜백 호출
+                        onLoadComplete()
+
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }.start()
+}
+
+private fun setupAnimatedModel(modelViewer: ModelViewer, asset: FilamentAsset, animator: Animator) {
+    // 애니메이션이 있으니까 크기 줄이기
+    val tm = modelViewer.engine.transformManager
+    val root = asset.root
+    val rootInst = tm.getInstance(root)
+
+    val scale = 0.28f
+    val translateY = -0.20f
+
+    // column-major 4x4, translation은 [12],[13],[14] 슬롯
+    val trs = floatArrayOf(
+        scale, 0f, 0f, 0f,
+        0f, scale, 0f, 0f,
+        0f, 0f, scale, 0f,
+        0f, translateY, 0f, 1f
     )
+    tm.setTransform(rootInst, trs)
+
+    // 공통 프레임 루프에서 돌리도록 애니메이션 정보만 세팅
+    animIndex = 0
+    animDurationSec = animator.getAnimationDuration(0)
+    animStartNanos = -1L  // 다음 프레임에서 시작점 리셋
+}
+
+private fun saveBaseTransform(modelViewer: ModelViewer) {
+    modelViewer.asset?.let { asset ->
+        val tm = modelViewer.engine.transformManager
+        val ti = tm.getInstance(asset.root)
+        if (ti != 0) {
+            baseTransform = FloatArray(16)
+            tm.getTransform(ti, baseTransform)
+        }
+    }
 }
 
 private fun setupFrontLight(modelViewer: ModelViewer) {
     // 배경은 투명/스카이박스 없음 (필요시 색만 바꾸세요)
     modelViewer.scene.skybox = null
     modelViewer.scene.indirectLight = null   // ✅ 간접광도 제거 (정면 라이트만)
-
-    // 기존에 씬에 있던 라이트가 있다면 정리(선택)
-    // Filament는 라이트 엔티티를 추적하지 않으므로,
-    // 새 씬이 아니라면 별도 관리가 필요합니다. 일단 추가만 하는 상황이면 생략 가능.
 
     // 정면에서 살짝 내려 비추는 한 개의 방향광
     val key = EntityManager.get().create()
@@ -168,84 +317,6 @@ private fun setupTransparentBackground(modelViewer: ModelViewer) {
         e.printStackTrace()
     }
 }
-
-/**
- * 레벨에 맞는 모델 로드 (안전한 방식)
- */
-private fun loadModelForLevel(context: Context, modelViewer: ModelViewer, level: Int) {
-    try {
-        val assetPath = LevelModels.assetPathFor(level)
-        val buffer = readAssetFile(context, assetPath) ?: return
-
-        modelViewer.loadModelGlb(buffer)
-
-        // 리소스 로더 호출 (텍스처/머티리얼 GPU 업로드)
-        modelViewer.asset?.let { asset ->
-            ResourceLoader(modelViewer.engine).loadResources(asset)
-        }
-        val asset = modelViewer.asset
-        val animator = modelViewer.animator
-        val animationCount = animator?.animationCount ?: 0
-        val hasAnimation = animationCount > 0
-
-        if (hasAnimation) {
-            // 애니메이션이 있으니까 크기 줄이기
-            val tm = modelViewer.engine.transformManager
-            val root = asset!!.root
-            val rootInst = tm.getInstance(root)
-
-            val scale = 0.28f
-            val translateY = -0.20f
-
-            // column-major 4x4, translation은 [12],[13],[14] 슬롯
-            val trs = floatArrayOf(
-                scale, 0f, 0f, 0f,
-                0f, scale, 0f, 0f,
-                0f, 0f, scale, 0f,
-                0f, translateY, 0f, 1f
-            )
-            tm.setTransform(rootInst, trs)
-
-            // 공통 프레임 루프에서 돌리도록 애니메이션 정보만 세팅
-            animIndex = 0
-            animDurationSec = animator?.getAnimationDuration(0) ?: 1f
-            animStartNanos = -1L  // 다음 프레임에서 시작점 리셋
-
-
-            var animationTime = 0f
-            val choreographer = Choreographer.getInstance()
-            val cb = object : Choreographer.FrameCallback {
-                override fun doFrame(frameTimeNanos: Long) {
-                    animationTime += 0.016f  // 프레임당 약 16ms 진행
-
-                    animator?.applyAnimation(0, animationTime) // 0번 애니메이션 적용
-                    animator?.updateBoneMatrices()
-
-                    modelViewer.render(frameTimeNanos)
-                    choreographer.postFrameCallback(this)
-                }
-            }
-            choreographer.postFrameCallback(cb)
-        } else {
-            // 기존처럼 모델 크기 정규화
-            modelViewer.transformToUnitCube()
-        }
-
-        // root 트랜스폼 저장
-        modelViewer.asset?.let { asset ->
-            val tm = modelViewer.engine.transformManager
-            val ti = tm.getInstance(asset.root)
-            if (ti != 0) {
-                baseTransform = FloatArray(16)
-                tm.getTransform(ti, baseTransform)
-            }
-        }
-
-    } catch (e: Exception) {
-        e.printStackTrace()
-    }
-}
-
 
 /**
  * assets에서 GLB 파일 읽기
