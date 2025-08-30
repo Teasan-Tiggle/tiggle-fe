@@ -39,6 +39,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.media3.extractor.text.Subtitle
 import com.ssafy.tiggle.R
 import com.ssafy.tiggle.domain.entity.piggybank.AccountHolder
 import com.ssafy.tiggle.domain.entity.piggybank.RegisterAccount
@@ -56,7 +57,7 @@ fun RegisterAccountScreen(
     modifier: Modifier = Modifier,
     viewModel: RegisterAccountViewModel = hiltViewModel(),
     onBackClick: () -> Unit = {},
-    isEdit: Boolean = false,
+    isEdit: Boolean,
     onFinish: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -69,7 +70,10 @@ fun RegisterAccountScreen(
             viewModel.goToPreviousStep()
         }
     }
-    val title = if (isEdit) "계좌 수정" else "계좌 등록"
+    val title = if (!isEdit) "계좌 등록" else "계좌 수정"
+    val sub_title=if (!isEdit) "계좌 등록" else "계좌 수정"
+    val desc=if (!isEdit) "잔돈 적립과 기부를 위해\n" +
+            " 내 계좌를 등록해주세요." else "새로운 계좌를 등록해주세요."
 
     when (uiState.registerAccountStep) {
         RegisterAccountStep.ACCOUNT -> {
@@ -79,7 +83,9 @@ fun RegisterAccountScreen(
                 onAccountChange = viewModel::updateAccountNum,
                 onConfirmClick = { viewModel.fetchAccountHolder() },
                 onDismissError = viewModel::clearError,
-                title = title
+                title = title,
+                subTitle=sub_title,
+                desc=desc
             )
         }
 
@@ -131,7 +137,9 @@ fun AccountInputScreen(
     onAccountChange: (String) -> Unit,
     onConfirmClick: () -> Unit,
     onDismissError: () -> Unit,
-    title: String
+    title: String,
+    subTitle: String,
+    desc:String
 ) {
     TiggleScreenLayout(
         showBackButton = true,
@@ -175,14 +183,14 @@ fun AccountInputScreen(
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             ) {
                 Text(
-                    text = "계좌 등록",
+                    text = subTitle,
                     color = Color.Black,
                     fontSize = 22.sp,
                     style = AppTypography.headlineLarge,
                 )
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    text = "잔돈 적립과 기부를 위해\n 내 계좌를 등록해주세요.",
+                    text = desc,
                     color = TiggleGrayText,
                     fontSize = 13.sp,
                     style = AppTypography.bodySmall,
@@ -777,7 +785,9 @@ fun AccountInputPreview() {
         onAccountChange = {},
         onConfirmClick = {},
         onDismissError = {},
-        title = ""
+        title = "",
+        subTitle = "",
+        desc = ""
     )
 }
 

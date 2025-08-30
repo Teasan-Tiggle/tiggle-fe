@@ -104,6 +104,8 @@ dependencies {
     implementation("com.google.android.filament:gltfio-android:1.57.1")
     implementation("com.google.android.filament:filament-utils-android:1.57.1")
 
+    implementation("com.airbnb.android:lottie-compose:6.5.0")
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

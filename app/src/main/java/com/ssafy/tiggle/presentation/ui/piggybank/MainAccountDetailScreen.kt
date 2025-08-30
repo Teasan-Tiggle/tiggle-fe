@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -25,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -47,7 +49,7 @@ fun MainAccountDetailScreen(
 
     TiggleScreenLayout(
         showBackButton = true,
-        title = "오늘 모인 티끌",
+        title = "나의 계좌 입출금",
         onBackClick = onBackClick,
         contentPadding = PaddingValues(0.dp),
         enableScroll = false
@@ -102,7 +104,7 @@ fun MainAccountDetailScreen(
 fun TransactionItem(tx: DomainTransaction) {
     val borderColor = Color(0xFFE0E0E0) // 캡처 느낌의 연한 회색 테두리
     val timeTextColor = Color(0xFF9AA3AD) // 연한 회색 텍스트
-    val amountColor = if (tx.transactionType == "출금") Color(0xFFD32F2F) else TiggleBlue
+    val amountColor = if (tx.transactionType == "출금(이체)") Color(0xFFD32F2F) else TiggleBlue
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -111,7 +113,7 @@ fun TransactionItem(tx: DomainTransaction) {
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = androidx.compose.foundation.BorderStroke(1.dp, borderColor)
     ) {
-        Column(modifier = Modifier.padding(vertical = 10.dp, horizontal = 15.dp)) {
+        Column(modifier = Modifier.padding(vertical = 20.dp, horizontal = 15.dp)) {
 
             // 상단 행: 날짜 + 이름 / 금액
             Row(
@@ -127,24 +129,34 @@ fun TransactionItem(tx: DomainTransaction) {
                         color = timeTextColor
                     )
                     Spacer(Modifier.height(4.dp))
-                    Text(
-                        text = tx.description,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = Color(0xFF1C1F23)
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = tx.description,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color(0xFF1C1F23),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.width(200.dp)
+                        )
+                        // 금액 (+/-)
+                        Text(
+                            text = buildString {
+                                append(if (tx.transactionType == "출금(이체)") "- " else "+ ")
+                                append("${formatAmount(tx.amount.toLong())}원")
+                            },
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = amountColor
+                        )
+                    }
                 }
 
-                // 금액 (+/-)
-                Text(
-                    text = buildString {
-                        append(if (tx.transactionType == "출금") "- " else "+ ")
-                        append("${formatAmount(tx.amount.toLong())}원")
-                    },
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = amountColor
-                )
+
             }
 
             Spacer(Modifier.height(18.dp))

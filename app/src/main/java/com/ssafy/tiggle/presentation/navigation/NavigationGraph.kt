@@ -172,7 +172,8 @@ fun NavigationGraph(
                             onBackClick = { navBackStack.removeLastOrNull() },
                             onFinish = {
                                 navBackStack.removeLastOrNull()
-                            }
+                            },
+                            isEdit = key.isEdit
                         )
                     }
 
@@ -199,6 +200,7 @@ fun NavigationGraph(
                     is Screen.MainAccountDetail -> NavEntry(key) {
                         MainAccountDetailScreen(
                             accountNo = key.accountNo,
+                            onBackClick = {navBackStack.removeLastOrNull()}
                         )
                     }
 

@@ -3,20 +3,21 @@ package com.ssafy.tiggle.presentation.ui.growth
 import android.annotation.SuppressLint
 import android.content.Context
 import android.view.Choreographer
-import android.view.SurfaceView
 import android.view.MotionEvent
-import androidx.compose.runtime.*
+import android.view.SurfaceView
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
-import com.google.android.filament.utils.ModelViewer
-import com.google.android.filament.utils.Utils
-import com.google.android.filament.IndirectLight
-import com.google.android.filament.gltfio.ResourceLoader
-import android.graphics.PixelFormat
-import android.util.Log
 import com.google.android.filament.EntityManager
 import com.google.android.filament.LightManager
+import com.google.android.filament.gltfio.ResourceLoader
+import com.google.android.filament.utils.ModelViewer
+import com.google.android.filament.utils.Utils
 import java.io.IOException
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -27,6 +28,7 @@ import kotlin.math.PI
  */
 // 전역 변수
 private var baseTransform: FloatArray? = null
+
 // 애니메이션 자동재생용 상태
 private var animIndex: Int = -1
 private var animDurationSec: Float = 0f
@@ -122,6 +124,7 @@ fun Character3D(
         }
     )
 }
+
 private fun setupFrontLight(modelViewer: ModelViewer) {
     // 배경은 투명/스카이박스 없음 (필요시 색만 바꾸세요)
     modelViewer.scene.skybox = null
@@ -135,12 +138,13 @@ private fun setupFrontLight(modelViewer: ModelViewer) {
     val key = EntityManager.get().create()
     LightManager.Builder(LightManager.Type.DIRECTIONAL)
         .color(1.0f, 1.0f, 1.0f)   // 순백색 라이트
-        .intensity(200_000f)       // 밝기 (필요하면 80k~200k 사이로 조절)
+        .intensity(450_000f)       // 밝기 (필요하면 80k~200k 사이로 조절)
         .direction(0f, -0.2f, -1f) // ✅ 화면 정면(–Z)에서 약간 아래로
         .castShadows(false)        // 그림자 비활성화
         .build(modelViewer.engine, key)
     modelViewer.scene.addEntity(key)
 }
+
 /**
  * 투명 배경 설정
  */
@@ -195,10 +199,10 @@ private fun loadModelForLevel(context: Context, modelViewer: ModelViewer, level:
 
             // column-major 4x4, translation은 [12],[13],[14] 슬롯
             val trs = floatArrayOf(
-                scale, 0f,   0f,   0f,
-                0f,    scale,0f,   0f,
-                0f,    0f,   scale,0f,
-                0f,    translateY, 0f, 1f
+                scale, 0f, 0f, 0f,
+                0f, scale, 0f, 0f,
+                0f, 0f, scale, 0f,
+                0f, translateY, 0f, 1f
             )
             tm.setTransform(rootInst, trs)
 
@@ -277,6 +281,7 @@ private fun enableHorizontalDragRotation(surfaceView: SurfaceView, modelViewer: 
             MotionEvent.ACTION_DOWN -> {
                 lastTouchX = event.x
             }
+
             MotionEvent.ACTION_MOVE -> {
                 val dx = event.x - lastTouchX
                 lastTouchX = event.x
@@ -319,9 +324,9 @@ private fun multiplyMat4(a: FloatArray, b: FloatArray): FloatArray {
         for (j in 0..3) {
             var sum = 0f
             for (k in 0..3) {
-                sum += a[i + k*4] * b[k + j*4]
+                sum += a[i + k * 4] * b[k + j * 4]
             }
-            out[i + j*4] = sum
+            out[i + j * 4] = sum
         }
     }
     return out

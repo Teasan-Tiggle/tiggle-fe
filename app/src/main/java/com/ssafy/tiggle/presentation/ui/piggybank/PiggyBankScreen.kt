@@ -1,5 +1,7 @@
 package com.ssafy.tiggle.presentation.ui.piggybank
 
+import androidx.compose.animation.core.animateIntAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -28,6 +30,9 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -111,7 +116,6 @@ fun PiggyBankScreen(
             style = AppTypography.bodySmall
         )
 
-        Spacer(Modifier.height(50.dp))
         Spacer(Modifier.height(50.dp))
 
         if (uiState.hasPiggyBank) {
@@ -281,7 +285,6 @@ private fun TodaySavingBanner(uiState: PiggyBankState, onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(130.dp)
             .clip(RoundedCornerShape(radius))
             .background(
                 brush = Brush.horizontalGradient(
@@ -303,12 +306,18 @@ private fun TodaySavingBanner(uiState: PiggyBankState, onClick: () -> Unit) {
                     style = AppTypography.bodySmall
                 )
                 Spacer(Modifier.height(6.dp))
-                Text(
-                    "${uiState.piggyBankAccount.currentAmount}원",
-                    color = Color.White,
-                    fontSize = 34.sp,
-                    fontWeight = FontWeight.ExtraBold
+                val target = uiState.piggyBankAccount.currentAmount   // Long
+
+                AnimatedNumberCounter(
+                    targetValue = target
                 )
+//                Text(
+//                    text = "${Formatter.formatCurrency(animated.toLong())}원",
+//                    color = Color.White,
+//                    fontSize = 34.sp,
+//                    fontWeight = FontWeight.ExtraBold
+//                )
+
                 Spacer(Modifier.height(10.dp))
                 Text(
                     "+ 지난주에 ${
@@ -343,7 +352,6 @@ private fun AccountCard(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .height(130.dp)
             .clip(RoundedCornerShape(radius))
             .background(Color.White)
             .border(1.dp, Color(0x11000000), RoundedCornerShape(radius))
@@ -429,6 +437,33 @@ private fun DutchButtonsRow(onStatus: () -> Unit, onStart: () -> Unit) {
     }
 }
 
+@Composable
+private fun AnimatedNumberCounter(
+    targetValue: Long,
+    modifier: Modifier = Modifier
+) {
+    var isVisible by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        isVisible = true
+    }
+
+    val animatedValue by animateIntAsState(
+        targetValue = if (isVisible) targetValue.toInt() else 0,
+        animationSpec = tween(
+            durationMillis = 1000,
+            easing = androidx.compose.animation.core.EaseOutQuart
+        ),
+        label = "number_animation"
+    )
+
+    Text(
+        text = "${Formatter.formatCurrency(animatedValue.toLong())}",
+        color = Color.White,
+        fontSize = 34.sp,
+        fontWeight = FontWeight.ExtraBold
+    )
+}
 
 @Preview
 @Composable

@@ -28,7 +28,7 @@ fun PiggyBankDetailRoute(
         onTabChange = { tab ->
             viewModel.setSelectedTab(tab)
             when (tab) {
-                PiggyTab.SpareChange -> viewModel.reloadEntriesByType("CHANGE")
+                PiggyTab.SpareChange -> viewModel.reloadEntriesByType("TIGGLE")
                 PiggyTab.DutchPay -> viewModel.reloadEntriesByType("DUTCHPAY")
             }
         },

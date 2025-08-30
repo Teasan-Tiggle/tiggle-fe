@@ -64,7 +64,7 @@ fun PiggyBankDetailsScreen(
     onBack: () -> Unit = {},
     onMore: () -> Unit = {},
     onTabChange: (PiggyTab) -> Unit = {},
-    onItemClick: (PiggyBankEntry) -> Unit = {}
+    onItemClick: (PiggyBankEntry) -> Unit = {},
 ) {
     TiggleScreenLayout(
         showBackButton = true,
@@ -108,12 +108,11 @@ fun PiggyBankDetailsScreen(
                     SectionTitle(text = "주간 자투리 적립")
                     Spacer(Modifier.height(10.dp))
 
-                    Box(Modifier.fillMaxSize()) {
+                    Column () {
                         // 카드 높이만큼 하단 여백(패딩) 확보: 100~120dp 권장
                         LazyColumn(
                             modifier = Modifier
-                                .fillMaxSize()
-                                .padding(bottom = 108.dp),
+                                .weight(2f),
                             verticalArrangement = Arrangement.spacedBy(10.dp),
                             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 0.dp)
                         ) {
@@ -126,8 +125,8 @@ fun PiggyBankDetailsScreen(
                             title = "자투리 적립 방식",
                             message = "매주 월요일에 내 계좌 잔액의 천원 미만 자투리 금액이 자동으로 저금통에 적립됩니다.",
                             modifier = Modifier
-                                .align(Alignment.BottomCenter)
-                                .padding(horizontal = 20.dp, vertical = 20.dp)
+                                .weight(1f)
+                                .padding(horizontal = 20.dp, vertical = 30.dp)
                         )
                     }
                 }
@@ -136,11 +135,10 @@ fun PiggyBankDetailsScreen(
                     SectionTitle(text = "더치페이 잔돈 적립")
                     Spacer(Modifier.height(10.dp))
 
-                    Box(Modifier.fillMaxSize()) {
+                    Column () {
                         LazyColumn(
                             modifier = Modifier
-                                .fillMaxSize()
-                                .padding(bottom = 108.dp),
+                                .weight(2f),
                             verticalArrangement = Arrangement.spacedBy(10.dp),
                             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 0.dp)
                         ) {
@@ -153,8 +151,8 @@ fun PiggyBankDetailsScreen(
                             title = "더치페이 적립 방식",
                             message = "더치페이할 때 ‘내가 더 낼게요’를 선택하면 자투리 금액이 저금통에 적립됩니다.",
                             modifier = Modifier
-                                .align(Alignment.BottomCenter)
-                                .padding(horizontal = 20.dp, vertical = 20.dp)
+                                .weight(1f)
+                                .padding(horizontal = 20.dp, vertical = 30.dp)
                         )
                     }
                 }
@@ -296,7 +294,7 @@ private fun EntryItemCard(item: PiggyBankEntry, onClick: () -> Unit) {
         ) {
             // 아이콘 매핑
             val icon = when (item.type.lowercase()) {
-                "자투리", "spare", "weekly", "change" -> R.drawable.coin_icon
+                "자투리", "spare", "weekly", "change", "tiggle" -> R.drawable.coin_icon
                 "더치페이", "dutch", "dutchpay" -> R.drawable.dutchpay_icon
                 else -> null
             }
@@ -336,7 +334,7 @@ private fun EntryItemCard(item: PiggyBankEntry, onClick: () -> Unit) {
             Column(horizontalAlignment = Alignment.End) {
                 Text(
                     text = "+ ${formatAmount(item.amount)}",
-                    color = MaterialTheme.colorScheme.primary,
+                    color = TiggleBlue,
                     fontWeight = FontWeight.Bold
                 )
                 Spacer(Modifier.height(6.dp))
@@ -345,7 +343,8 @@ private fun EntryItemCard(item: PiggyBankEntry, onClick: () -> Unit) {
                             "자투리",
                             "spare",
                             "weekly",
-                            "change"
+                            "change",
+                            "tiggle"
                         )
                     ) "주간 적립" else "더치페이",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,

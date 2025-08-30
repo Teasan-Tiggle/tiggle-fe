@@ -1,5 +1,6 @@
 package com.ssafy.tiggle.presentation.ui.piggybank
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ssafy.tiggle.domain.entity.piggybank.EsgCategory
@@ -15,6 +16,7 @@ import retrofit2.HttpException
 import java.text.DecimalFormat
 import javax.inject.Inject
 
+private const val TAG = "PiggyBankViewModel"
 @HiltViewModel
 class PiggyBankViewModel @Inject constructor(
     val useCases: PiggyBankUseCases
@@ -276,40 +278,54 @@ class PiggyBankViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
-            // 병렬 호출
-            val changeDeferred = async {
-                useCases.getPiggyBankEntryUseCase(
-                    type = "CHANGE",
-                    cursor = changeCursor,
-                    size = size,
-                    sortKey = sortKey
-                )
-            }
-            val dutchDeferred = async {
-                useCases.getPiggyBankEntryUseCase(
-                    type = "DUTCHPAY",
-                    cursor = dutchCursor,
-                    size = size,
-                    sortKey = sortKey
-                )
-            }
+            try {
+                // 병렬 호출
+                val changeDeferred = async {
+                    useCases.getPiggyBankEntryUseCase(
+                        type = "TIGGLE",
+                        cursor = changeCursor,
+                        size = size,
+                        sortKey = sortKey
+                    )
+                }
+                val dutchDeferred = async {
+                    useCases.getPiggyBankEntryUseCase(
+                        type = "DUTCHPAY",
+                        cursor = dutchCursor,
+                        size = size,
+                        sortKey = sortKey
+                    )
+                }
 
-            val changeRes = changeDeferred.await()
-            val dutchRes = dutchDeferred.await()
+                val changeRes = changeDeferred.await()
+                val dutchRes = dutchDeferred.await()
 
-            val changeList = changeRes.getOrElse { emptyList() }
-            val dutchList = dutchRes.getOrElse { emptyList() }
+                val changeList = changeRes.getOrElse { emptyList() }
+                val dutchList = dutchRes.getOrElse { emptyList() }
 
-            val error = changeRes.exceptionOrNull()?.message
-                ?: dutchRes.exceptionOrNull()?.message
+                val error = changeRes.exceptionOrNull()?.message
+                    ?: dutchRes.exceptionOrNull()?.message
 
-            _uiState.update {
-                it.copy(
-                    changeList = changeList,
-                    dutchpayList = dutchList,
-                    isLoading = false,
-                    errorMessage = error
-                )
+                Log.d(TAG, "loadAllPiggyEntries: $changeList")
+                Log.d(TAG, "loadAllPiggyEntries: $dutchList")
+                _uiState.update {
+                    it.copy(
+                        changeList = changeList,
+                        dutchpayList = dutchList,
+                        isLoading = false,
+                        errorMessage = error
+                    )
+                }
+            }catch (e:Exception){
+                Log.e(TAG, "loadAllPiggyEntries failed", e)
+                _uiState.update {
+                    it.copy(
+                        changeList = emptyList(),
+                        dutchpayList = emptyList(),
+                        isLoading = false,
+                        errorMessage = e.message
+                    )
+                }
             }
         }
     }
@@ -321,11 +337,16 @@ class PiggyBankViewModel @Inject constructor(
         sortKey: String? = null
     ) {
         viewModelScope.launch {
+            val serverType = when (type.uppercase()) {
+                "CHANGE" -> "TIGGLE"
+                "DUTCHPAY" -> "DUTCHPAY"
+                else -> type.uppercase()
+            }
             val result = useCases.getPiggyBankEntryUseCase(type, cursor, size, null, null, sortKey)
             result.onSuccess { list ->
                 _uiState.update { s ->
                     when (type) {
-                        "CHANGE" -> s.copy(changeList = list)
+                        "CHANGE","TIGGLE" -> s.copy(changeList = list)
                         "DUTCHPAY" -> s.copy(dutchpayList = list)
                         else -> s
                     }
