@@ -1,5 +1,7 @@
 package com.ssafy.tiggle.presentation.ui.dutchpay
 
+import android.R.attr.label
+import android.util.Log
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
@@ -327,9 +329,18 @@ private fun AnimatedNumberCounter(
     targetValue: Long,
     modifier: Modifier = Modifier
 ) {
+    var isVisible by remember { mutableStateOf(false) }
+    
+    LaunchedEffect(Unit) {
+        isVisible = true
+    }
+    
     val animatedValue by animateIntAsState(
-        targetValue = targetValue.toInt(),
-        animationSpec = tween(durationMillis = 1000),
+        targetValue = if (isVisible) targetValue.toInt() else 0,
+        animationSpec = tween(
+            durationMillis = 1000,
+            easing = androidx.compose.animation.core.LinearEasing
+        ),
         label = "number_animation"
     )
     
@@ -512,8 +523,12 @@ fun DutchPayCompleteContent(
                 val myAmount = if (payMore) roundUpToHundreds(perHead) else perHead.toLong()
                 val friendAmount = perHead.toLong()
 
+
+
+                Text("참여자 (${participantCount}명)")
+
                 DetailRow(
-                    label = "참여자 (${participantCount}명)",
+                    label = "내가 낸 금액",
                     value = Formatter.formatCurrency(myAmount)
                 )
 
@@ -614,9 +629,9 @@ private fun InfoStep(text: String) {
 @Composable
 private fun PreviewDutchPay_PickUsers() {
     val sampleUsers = listOf(
-        UserSummary(4, "김테스트"),
-        UserSummary(5, "박테스트"),
-        UserSummary(6, "이테스트")
+        UserSummary(4, "김테스트", "신은대학교", "컴퓨터학부"),
+        UserSummary(5, "박테스트", "신한대학교", "건축학과"),
+        UserSummary(6, "이테스트", "싸피대학교", "인공지능학과")
     )
     val uiState = CreateDutchPayState(
         step = CreateDutchPayStep.PICK_USERS,
@@ -668,9 +683,9 @@ private fun PreviewDutchPay_InputAmount() {
     ) {
         DutchPayInputAmountContent(
             selectedUsers = listOf(
-                UserSummary(1, "김민호"),
-                UserSummary(2, "민경이"),
-                UserSummary(3, "홍길동")
+                UserSummary(1, "김민호", "신은대학교", "컴퓨터학부"),
+                UserSummary(2, "민경이", "신한대학교", "건축학과"),
+                UserSummary(3, "홍길동", "싸피대학교", "인공지능학과")
             ),
             amountText = uiState.amountText,
             onAmountChange = {},
@@ -704,8 +719,8 @@ private fun PreviewDutchPay_Complete() {
         DutchPayCompleteContent(
             totalAmount = 50000L,
             selectedUsers = listOf(
-                UserSummary(1, "김민준"),
-                UserSummary(2, "박예준")
+                UserSummary(1, "김민준", "신은대학교", "컴퓨터학부"),
+                UserSummary(2, "박예준", "신한대학교", "건축학과")
             ),
             payMore = true
         )

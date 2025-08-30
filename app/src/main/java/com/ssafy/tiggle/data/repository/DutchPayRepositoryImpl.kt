@@ -49,19 +49,23 @@ class DutchPayRepositoryImpl @Inject constructor(
             if (response.isSuccessful) {
                 val responseData = response.body()?.data
                 if (responseData != null) {
+
+                    val currentUserId = responseData.requestUserId
+                    val currentShare = responseData.shares.find { it.userId == currentUserId }
+                    
                     val detail = DutchPayRequestDetail(
-                        dutchPayId = responseData.dutchpayId,
+                        dutchPayId = responseData.id,
                         title = responseData.title,
                         message = responseData.message,
-                        requesterName = responseData.requesterName,
-                        participantCount = responseData.participantCount,
+                        requesterName = responseData.creator.name,
+                        participantCount = responseData.shares.size,
                         totalAmount = responseData.totalAmount,
-                        requestedAt = responseData.requestedAt,
-                        myAmount = responseData.myAmount,
-                        originalAmount = responseData.originalAmount,
-                        tiggleAmount = responseData.tiggleAmount,
-                        payMoreDefault = responseData.payMoreDefault,
-                        isCreator = responseData.creator
+                        requestedAt = responseData.createdAt,
+                        myAmount = currentShare?.amount ?: 0L,
+                        originalAmount = currentShare?.amount ?: 0L,
+                        tiggleAmount = responseData.roundedPerPerson - (currentShare?.amount ?: 0L),
+                        payMoreDefault = true, // 기본값으로 설정
+                        isCreator = responseData.creator.id == currentUserId
                     )
                     Result.success(detail)
                 } else {
@@ -96,13 +100,15 @@ class DutchPayRepositoryImpl @Inject constructor(
                             Share(
                                 userId = shareDto.userId,
                                 name = shareDto.name,
-                                amount = shareDto.amount,
+                                amount = shareDto.amount.toInt(),
+                                tiggleAmount = shareDto.tiggleAmount?.toInt(),
                                 status = shareDto.status
                             )
                         },
                         roundedPerPerson = responseData.roundedPerPerson,
                         payMore = responseData.payMore,
-                        createdAt = responseData.createdAt
+                        createdAt = responseData.createdAt,
+                        requestUserId = responseData.requestUserId
                     )
                     Result.success(detail)
                 } else {

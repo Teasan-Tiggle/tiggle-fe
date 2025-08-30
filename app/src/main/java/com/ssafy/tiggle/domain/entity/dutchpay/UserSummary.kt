@@ -5,5 +5,7 @@ package com.ssafy.tiggle.domain.entity.dutchpay
  */
 data class UserSummary(
     val id: Long,
-    val name: String
+    val name: String,
+    val university: String? = null,
+    val department: String? = null
 )

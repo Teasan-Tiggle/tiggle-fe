@@ -241,7 +241,10 @@ fun NavigationGraph(
                     is Screen.DutchPayDetail -> NavEntry(key) {
                         DutchPayDetailScreen(
                             dutchPayId = key.dutchPayId,
-                            onBackClick = { navBackStack.removeLastOrNull() }
+                            onBackClick = { navBackStack.removeLastOrNull() },
+                            onPaymentClick = {
+                                navBackStack.add(Screen.DutchpayRecieve(key.dutchPayId))
+                            }
                         )
                     }
 
