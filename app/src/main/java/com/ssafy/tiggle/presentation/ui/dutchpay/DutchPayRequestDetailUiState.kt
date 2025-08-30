@@ -6,5 +6,5 @@ data class DutchPayRequestDetailUiState(
     val isLoading: Boolean = false,
     val dutchPayDetail: DutchPayRequestDetail? = null,
     val errorMessage: String? = null,
-    val isPaymentSuccess: Boolean = false
+    val isPaymentSuccess: Boolean? = null
 )

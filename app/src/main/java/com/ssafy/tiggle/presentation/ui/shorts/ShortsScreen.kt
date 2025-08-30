@@ -51,6 +51,11 @@ import java.text.NumberFormat
 import java.util.Locale
 import androidx.media3.ui.AspectRatioFrameLayout
 import kotlinx.coroutines.delay
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.LottieConstants
+import com.airbnb.lottie.compose.animateLottieCompositionAsState
+import com.airbnb.lottie.compose.rememberLottieComposition
 
 @androidx.annotation.OptIn(UnstableApi::class)
 @Composable
@@ -366,7 +371,10 @@ private fun ShortsVideoItem(
             DonationContent(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                onSuccess = {
+                    showLikeSheet = false // 모달도 함께 닫기
+                }
             )
             Spacer(modifier = Modifier.height(12.dp))
         }
@@ -383,12 +391,15 @@ private fun formatCount(count: Int): String {
 
 @Composable
 private fun DonationContent(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onSuccess: () -> Unit = {}
 ) {
     // 금액 선택 상태
     var selectedAmount by remember { mutableStateOf<Int?>(100) }
     var showCustomInput by remember { mutableStateOf(false) }
     var customAmountText by remember { mutableStateOf("") }
+    var showSuccessDialog by remember { mutableStateOf(false) }
+    var showLoadingDialog by remember { mutableStateOf(false) }
 
     val currencyFormatter = remember { NumberFormat.getNumberInstance(Locale.KOREA) }
 
@@ -483,7 +494,7 @@ private fun DonationContent(
                 append(display).append("원 기부하기")
             }
             Button(
-                onClick = { /* TODO: 기부 액션 */ },
+                onClick = { showLoadingDialog = true },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B5BFF))
@@ -517,6 +528,133 @@ private fun DonationContent(
             }
         )
     }
+    
+    // 로딩 다이얼로그
+    if (showLoadingDialog) {
+        DonationLoadingDialog(
+            onComplete = {
+                showLoadingDialog = false
+                showSuccessDialog = true
+            }
+        )
+    }
+    
+    // 기부 성공 다이얼로그
+    if (showSuccessDialog) {
+        DonationSuccessDialog(
+            onDismiss = { 
+                showSuccessDialog = false
+                onSuccess()
+            }
+        )
+    }
+}
+
+@Composable
+private fun DonationLoadingDialog(
+    onComplete: () -> Unit
+) {
+    LaunchedEffect(Unit) {
+        delay(1000) // 1초 대기
+        onComplete()
+    }
+    
+    AlertDialog(
+        onDismissRequest = { }, // 로딩 중에는 닫을 수 없음
+        properties = androidx.compose.ui.window.DialogProperties(
+            dismissOnBackPress = false,
+            dismissOnClickOutside = false
+        ),
+        title = {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                CircularProgressIndicator(
+                    color = Color(0xFF3B5BFF),
+                    modifier = Modifier.size(48.dp)
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                Text(
+                    text = "기부 처리 중...",
+                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                    color = Color.Black,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+            }
+        },
+        text = {
+            Text(
+                text = "잠시만 기다려주세요.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color(0xFF666666),
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+        },
+        confirmButton = { } // 로딩 중에는 버튼 없음
+    )
+}
+
+@Composable
+private fun DonationSuccessDialog(
+    onDismiss: () -> Unit
+) {
+    val composition by rememberLottieComposition(
+        LottieCompositionSpec.RawRes(com.ssafy.tiggle.R.raw.firework)
+    )
+    val progress by animateLottieCompositionAsState(
+        composition = composition,
+        iterations = LottieConstants.IterateForever
+    )
+    
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        properties = androidx.compose.ui.window.DialogProperties(
+            dismissOnBackPress = false,
+            dismissOnClickOutside = false
+        ),
+        title = {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                // Lottie 애니메이션
+                LottieAnimation(
+                    composition = composition,
+                    progress = { progress },
+                    modifier = Modifier.size(120.dp)
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                Text(
+                    text = "기부에 성공했습니다!",
+                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                    color = Color.Black,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+            }
+        },
+        text = {
+            Text(
+                text = "환경 보호에 동참해주셔서 감사합니다.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color(0xFF666666),
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+        },
+        confirmButton = {
+            Button(
+                onClick = onDismiss,
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B5BFF)),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text("확인", color = Color.White)
+            }
+        }
+    )
 }
 
 @Composable

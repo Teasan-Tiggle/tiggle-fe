@@ -27,6 +27,7 @@ roomKtx = "2.7.2"
 filament = "1.57.1"
 gltfioAndroid = "1.57.1"
 filamentAndroid = "1.17.1"
+lottieCompose = "6.5.0"
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-media3-common = { module = "androidx.media3:media3-common", version.ref = "media3Exoplayer" }
@@ -81,6 +82,9 @@ androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = 
 filament-android = { group = "com.google.android.filament", name = "filament-android", version.ref = "filament" }
 filament-utils-android = { group = "com.google.android.filament", name = "filament-utils-android", version.ref = "filament" }
 gltfio-android = { group = "com.google.android.filament", name = "gltfio-android", version.ref = "filament" }
+
+#Lottie
+lottie-compose = { group = "com.airbnb.android", name = "lottie-compose", version.ref = "lottieCompose" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

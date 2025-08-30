@@ -76,6 +76,6 @@ class DutchPayRequestDetailViewModel @Inject constructor(
     }
 
     fun clearPaymentSuccess() {
-        _uiState.update { it.copy(isPaymentSuccess = false) }
+        _uiState.update { it.copy(isPaymentSuccess = null) }
     }
 }

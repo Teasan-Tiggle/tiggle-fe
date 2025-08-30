@@ -20,6 +20,11 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.LottieConstants
+import com.airbnb.lottie.compose.animateLottieCompositionAsState
+import com.airbnb.lottie.compose.rememberLottieComposition
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -46,6 +51,7 @@ import com.ssafy.tiggle.presentation.ui.theme.AppTypography
 import com.ssafy.tiggle.presentation.ui.theme.TiggleBlue
 import com.ssafy.tiggle.presentation.ui.dutchpay.DutchPayRequestDetailViewModel
 import android.util.Log
+import androidx.compose.foundation.layout.size
 
 @Composable
 fun DutchpayRecieveScreen(
@@ -71,51 +77,56 @@ fun DutchpayRecieveScreen(
         }
     }
 
-    // 송금 성공 시 처리
-    LaunchedEffect(uiState.isPaymentSuccess) {
-        if (uiState.isPaymentSuccess) {
-            viewModel.clearPaymentSuccess()
-            onPaymentClick()
-        }
-    }
+    // 송금 성공 시 처리 - 다이얼로그에서 처리하므로 여기서는 제거
 
-    TiggleScreenLayout(
-        onBackClick = onBackClick,
-        bottomButton = {
-            uiState.dutchPayDetail?.let { detail ->
-                if (!detail.isCreator) {
-                    TiggleButton(
-                        text = "송금하기",
-                        onClick = { viewModel.payDutchPay(dutchPayId, payMoreEnabled) },
-                        enabled = !uiState.isLoading,
-                        isLoading = uiState.isLoading,
-                        variant = TiggleButtonVariant.Primary
-                    )
-                }
+    // 로딩 화면을 전체 화면 중앙에 표시
+    if (uiState.isLoading) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                CircularProgressIndicator(
+                    color = TiggleBlue,
+                    modifier = Modifier.size(48.dp)
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "송금 중...",
+                    style = AppTypography.bodyMedium,
+                    color = Color.Gray
+                )
             }
         }
-    ) {
-        when {
-            uiState.isLoading -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator(color = TiggleBlue)
-                }
-            }
-
-            else -> {
+    } else {
+        TiggleScreenLayout(
+            onBackClick = onBackClick,
+            bottomButton = {
                 uiState.dutchPayDetail?.let { detail ->
-                    DutchPayPaymentContent(
-                        detail = detail,
-                        payMoreEnabled = payMoreEnabled,
-                        onPayMoreChanged = { 
-                            Log.d("DutchpayRecieveScreen", "payMoreEnabled 변경: $it")
-                            payMoreEnabled = it 
-                        }
-                    )
+                    if (!detail.isCreator) {
+                        TiggleButton(
+                            text = "송금하기",
+                            onClick = { viewModel.payDutchPay(dutchPayId, payMoreEnabled) },
+                            enabled = true,
+                            isLoading = false,
+                            variant = TiggleButtonVariant.Primary
+                        )
+                    }
                 }
+            }
+        ) {
+            uiState.dutchPayDetail?.let { detail ->
+                DutchPayPaymentContent(
+                    detail = detail,
+                    payMoreEnabled = payMoreEnabled,
+                    onPayMoreChanged = { 
+                        Log.d("DutchpayRecieveScreen", "payMoreEnabled 변경: $it")
+                        payMoreEnabled = it 
+                    }
+                )
             }
         }
     }
@@ -138,6 +149,18 @@ fun DutchpayRecieveScreen(
                 }
             }
         )
+    }
+    
+    // 송금 성공 다이얼로그 표시
+    uiState.isPaymentSuccess?.let { isSuccess ->
+        if (isSuccess) {
+            PaymentSuccessDialog(
+                onDismiss = {
+                    viewModel.clearPaymentSuccess()
+                    onPaymentClick()
+                }
+            )
+        }
     }
 }
 
@@ -360,6 +383,66 @@ private fun DetailRow(
             modifier = Modifier.weight(1f)
         )
     }
+}
+
+@Composable
+private fun PaymentSuccessDialog(
+    onDismiss: () -> Unit
+) {
+    val composition by rememberLottieComposition(
+        LottieCompositionSpec.RawRes(com.ssafy.tiggle.R.raw.firework)
+    )
+    val progress by animateLottieCompositionAsState(
+        composition = composition,
+        iterations = LottieConstants.IterateForever
+    )
+    
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        properties = androidx.compose.ui.window.DialogProperties(
+            dismissOnBackPress = false,
+            dismissOnClickOutside = false
+        ),
+        title = {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                // Lottie 애니메이션
+                LottieAnimation(
+                    composition = composition,
+                    progress = { progress },
+                    modifier = Modifier.size(120.dp)
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                Text(
+                    text = "송금에 성공했습니다!",
+                    style = AppTypography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                    color = Color.Black,
+                    textAlign = TextAlign.Center
+                )
+            }
+        },
+        text = {
+            Text(
+                text = "더치페이 정산이 완료되었습니다.",
+                style = AppTypography.bodyMedium,
+                color = Color(0xFF666666),
+                textAlign = TextAlign.Center
+            )
+        },
+        confirmButton = {
+            TiggleButton(
+                text = "확인",
+                onClick = onDismiss,
+                enabled = true,
+                isLoading = false,
+                variant = TiggleButtonVariant.Primary
+            )
+        }
+    )
 }
 
 @Preview(showBackground = true)
