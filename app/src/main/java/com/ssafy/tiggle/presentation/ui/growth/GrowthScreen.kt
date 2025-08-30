@@ -30,12 +30,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
@@ -72,6 +74,12 @@ fun GrowthScreen(
     viewModel: GrowthViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    
+    // 상태 변화 감지를 위한 LaunchedEffect
+    LaunchedEffect(uiState.growth.level, uiState.growth.heart, uiState.growth.experiencePoints) {
+        // 상태가 변경될 때마다 로그 출력 (디버깅용)
+        android.util.Log.d("GrowthScreen", "🔄 UI 상태 업데이트: 레벨=${uiState.growth.level}, 하트=${uiState.growth.heart}, 경험치=${uiState.growth.experiencePoints}")
+    }
 
     TiggleScreenLayout(
         showBackButton = false,
@@ -105,7 +113,8 @@ fun GrowthScreen(
                 onDonationHistoryClick = onDonationHistoryClick,
                 onDonationStatusClick = onDonationStatusClick,
                 onDonationRankingClick = onDonationRankingClick,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                viewModel = viewModel
             )
         }
     }
@@ -173,8 +182,19 @@ private fun GrowthCard(
     onDonationHistoryClick: () -> Unit,
     onDonationStatusClick: () -> Unit,
     onDonationRankingClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: GrowthViewModel = hiltViewModel()
 ) {
+    // 진행률 계산 - experiencePoints 기반으로 개선
+    val progress = remember(
+        uiState.growth.experiencePoints,
+        uiState.growth.toNextLevel
+    ) {
+        val currentExp = uiState.growth.experiencePoints.toFloat()
+        val totalExp = currentExp + uiState.growth.toNextLevel
+        if (totalExp == 0f) 0f else currentExp / totalExp
+    }
+
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -198,20 +218,44 @@ private fun GrowthCard(
                     .heightIn(min = 240.dp)
                     .background(Color.Transparent)
             ) {
-                // 1) 캐릭터
-                Character3D(level = uiState.growth.level, modifier = Modifier.fillMaxSize())
+                // 캐릭터
+                key(uiState.growth.level, uiState.growth.experiencePoints) {
+                    Character3D(level = uiState.growth.level, modifier = Modifier.fillMaxSize())
+                }
+                
+                // 레벨업 애니메이션
+                if (uiState.isLevelUp) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .fillMaxSize()
+                    ) {
+                        // 레벨업 축하 텍스트
+                        Text(
+                            text = "레벨업! 🎉",
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TiggleBlue,
+                            modifier = Modifier
+                                .align(Alignment.Center)
+                                .background(
+                                    Color.White.copy(alpha = 0.9f),
+                                    RoundedCornerShape(16.dp)
+                                )
+                                .padding(horizontal = 20.dp, vertical = 12.dp)
+                        )
+                    }
+                }
 
-                // 2) 중앙 오버레이 Lottie (방법2: 진행도 직접 애니메이션)
-                val LOTTIE_SIZE_DP = 260.dp           // ← 더 크게
-                val LOTTIE_DURATION_MS = 3000         // ← 원하는 재생 시간(ms) 여기서 조절
+                // Lottie 애니메이션
+                val LOTTIE_SIZE_DP = 260.dp
+                val LOTTIE_DURATION_MS = 3000
                 val SLOW_PORTION = 0.85f
                 val MID_PROGRESS = 0.60f
                 var playLottie by remember { mutableStateOf(false) }
                 val composition by rememberLottieComposition(
-                    LottieCompositionSpec.RawRes(R.raw.heart2) // res/raw/heart.json
+                    LottieCompositionSpec.RawRes(R.raw.heart2)
                 )
-
-                // 진행도 0f → 1f 를 내가 정한 시간에 맞춰 애니메이션
                 val lottieProgress = remember { Animatable(0f) }
 
                 LaunchedEffect(playLottie, composition) {
@@ -222,8 +266,6 @@ private fun GrowthCard(
                             targetValue = MID_PROGRESS,
                             animationSpec = tween(durationMillis = t1, easing = LinearEasing)
                         )
-
-                        // 2) 뒤 구간: 남은 시간에 MID_PROGRESS → 1.0 (막판에 몰아서 빨라짐)
                         val t2 = LOTTIE_DURATION_MS - t1
                         lottieProgress.animateTo(
                             targetValue = 1f,
@@ -232,7 +274,7 @@ private fun GrowthCard(
                                 easing = FastOutLinearInEasing
                             )
                         )
-                        playLottie = false // 1회 재생 후 종료
+                        playLottie = false
                     }
                 }
 
@@ -240,7 +282,7 @@ private fun GrowthCard(
                     Box(
                         modifier = Modifier
                             .align(Alignment.Center)
-                            .size(LOTTIE_SIZE_DP) // ← 크기 키움
+                            .size(LOTTIE_SIZE_DP)
                     ) {
                         LottieAnimation(
                             composition = composition,
@@ -249,62 +291,97 @@ private fun GrowthCard(
                     }
                 }
 
-                // 3) 드래그 하트 (중앙 드롭 성공 시 Lottie 트리거 + 하트 원위치 복귀)
-                DraggableHeartDropTrigger(
-                    iconRes = R.drawable.heart,
-                    iconSize = 50.dp,
-                    triggerRadius = 80.dp,
-                    startOffsetBottomPadding = 16.dp,
-                    onDropInCenter = { playLottie = true }
-                )
+                // 드래그 하트
+                key(uiState.growth.heart) {
+                    DraggableHeartDropTrigger(
+                        iconRes = R.drawable.heart,
+                        iconSize = 50.dp,
+                        triggerRadius = 80.dp,
+                        startOffsetBottomPadding = 16.dp,
+                        enabled = uiState.growth.heart > 0, // 0개면 비활성화
+                        onDropInCenter = {
+                            playLottie = true
+                            viewModel.useHeart() // 하트 사용 API 호출
+                        }
+                    )
+                }
             }
 
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = "레벨 ${uiState.growth.level + 1}",
-                    fontSize = 14.sp,
-                    color = TiggleGrayText,
-                    modifier = Modifier
-                        .background(Color.White.copy(alpha = 0.7f), RoundedCornerShape(12.dp))
-                        .padding(horizontal = 12.dp, vertical = 4.dp)
-                )
-                Spacer(Modifier.width(12.dp))
-                Text(
-                    text = "쏠",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = TiggleBlue
-                )
+            // 레벨 + 하트 개수 표시
+            key(uiState.growth.level, uiState.growth.heart) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "레벨 ${uiState.growth.level}",
+                            fontSize = 14.sp,
+                            color = TiggleGrayText,
+                            modifier = Modifier
+                                .background(
+                                    Color.White.copy(alpha = 0.7f),
+                                    RoundedCornerShape(12.dp)
+                                )
+                                .padding(horizontal = 12.dp, vertical = 4.dp)
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Text(
+                            text = "쏠",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TiggleBlue
+                        )
+                    }
+                    Text(
+                        text = "❤️ ${uiState.growth.heart}",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (uiState.growth.heart > 0) Color.Red else TiggleGrayText
+                    )
+                }
             }
 
             Spacer(Modifier.height(16.dp))
 
-            Text(
-                text = "총 티끌: ${Formatter.formatCurrency(uiState.growth.totalAmount)}",
-                fontSize = 16.sp,
-                color = Color.Black,
-                fontWeight = FontWeight.Medium
-            )
+            key(uiState.growth.experiencePoints, uiState.growth.toNextLevel) {
+                Text(
+                    text = "총 티끌: ${Formatter.formatCurrency(uiState.growth.totalAmount)}",
+                    fontSize = 16.sp,
+                    color = Color.Black,
+                    fontWeight = FontWeight.Medium
+                )
+                
+                Spacer(Modifier.height(4.dp))
+                
+                Text(
+                    text = "경험치: ${uiState.growth.experiencePoints}",
+                    fontSize = 14.sp,
+                    color = TiggleGrayText,
+                    fontWeight = FontWeight.Medium
+                )
 
-            Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(12.dp))
 
-            LinearProgressIndicator(
-                progress = { 0.7f }, // TODO: 실제 진행률
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(8.dp)
-                    .clip(RoundedCornerShape(4.dp)),
-                color = TiggleBlue,
-                trackColor = Color.White.copy(alpha = 0.3f)
-            )
+                LinearProgressIndicator(
+                    progress = { progress }, // 실제 진행률 적용
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(8.dp)
+                        .clip(RoundedCornerShape(4.dp)),
+                    color = TiggleBlue,
+                    trackColor = Color.White.copy(alpha = 0.3f)
+                )
 
-            Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(8.dp))
 
-            Text(
-                text = "다음 레벨까지 ${Formatter.formatCurrency(uiState.growth.toNextLevel.toLong())}",
-                fontSize = 12.sp,
-                color = TiggleGrayText
-            )
+                Text(
+                    text = "다음 레벨까지 ${uiState.growth.toNextLevel} 경험치",
+                    fontSize = 12.sp,
+                    color = TiggleGrayText
+                )
+            }
         }
     }
 }
@@ -319,7 +396,8 @@ private fun DraggableHeartDropTrigger(
     iconSize: Dp,
     triggerRadius: Dp,
     startOffsetBottomPadding: Dp = 16.dp,
-    onDropInCenter: () -> Unit
+    onDropInCenter: () -> Unit,
+    enabled: Boolean
 ) {
     val density = LocalDensity.current
     val scope = rememberCoroutineScope()
@@ -358,35 +436,37 @@ private fun DraggableHeartDropTrigger(
                 modifier = Modifier
                     .size(iconSize)
                     .offset { IntOffset(offsetX.value.roundToInt(), offsetY.value.roundToInt()) }
-                    .pointerInput(parentW, parentH, iconSizePx) {
-                        detectDragGestures(
-                            onDrag = { change, drag ->
-                                // change.consume() // 버전에 따라 경고 나면 생략해도 OK
-                                val nx = (offsetX.value + drag.x)
-                                    .coerceIn(0f, (parentW - iconSizePx).coerceAtLeast(0f))
-                                val ny = (offsetY.value + drag.y)
-                                    .coerceIn(0f, (parentH - iconSizePx).coerceAtLeast(0f))
-                                scope.launch { offsetX.snapTo(nx) }
-                                scope.launch { offsetY.snapTo(ny) }
-                            },
-                            onDragEnd = {
-                                val centerX = parentW / 2f
-                                val centerY = parentH / 2f
-                                val heartCenterX = offsetX.value + iconSizePx / 2f
-                                val heartCenterY = offsetY.value + iconSizePx / 2f
-                                val dist = kotlin.math.hypot(
-                                    heartCenterX - centerX, heartCenterY - centerY
-                                )
+                    .alpha(if (enabled) 1f else 0.3f)
+                    .then(
+                        if (enabled) Modifier.pointerInput(parentW, parentH, iconSizePx) {
+                            detectDragGestures(
+                                onDrag = { _, drag ->
+                                    val nx = (offsetX.value + drag.x)
+                                        .coerceIn(0f, (parentW - iconSizePx).coerceAtLeast(0f))
+                                    val ny = (offsetY.value + drag.y)
+                                        .coerceIn(0f, (parentH - iconSizePx).coerceAtLeast(0f))
+                                    scope.launch { offsetX.snapTo(nx) }
+                                    scope.launch { offsetY.snapTo(ny) }
+                                },
+                                onDragEnd = {
+                                    val centerX = parentW / 2f
+                                    val centerY = parentH / 2f
+                                    val heartCenterX = offsetX.value + iconSizePx / 2f
+                                    val heartCenterY = offsetY.value + iconSizePx / 2f
+                                    val dist = kotlin.math.hypot(
+                                        heartCenterX - centerX, heartCenterY - centerY
+                                    )
 
-                                if (dist <= triggerRadiusPx) onDropInCenter()
+                                    if (dist <= triggerRadiusPx) onDropInCenter()
 
-                                val sx = parentW / 2f - iconSizePx / 2f
-                                val sy = parentH - iconSizePx - bottomPadPx
-                                scope.launch { offsetX.animateTo(sx, tween(220)) }
-                                scope.launch { offsetY.animateTo(sy, tween(220)) }
-                            }
-                        )
-                    }
+                                    val sx = parentW / 2f - iconSizePx / 2f
+                                    val sy = parentH - iconSizePx - bottomPadPx
+                                    scope.launch { offsetX.animateTo(sx, tween(220)) }
+                                    scope.launch { offsetY.animateTo(sy, tween(220)) }
+                                }
+                            )
+                        } else Modifier
+                    )
             )
         }
     }

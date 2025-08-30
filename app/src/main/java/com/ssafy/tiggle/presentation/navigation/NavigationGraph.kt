@@ -20,9 +20,9 @@ import com.ssafy.tiggle.presentation.ui.donation.DonationHistoryScreen
 import com.ssafy.tiggle.presentation.ui.donation.DonationRankingScreen
 import com.ssafy.tiggle.presentation.ui.donation.DonationStatusScreen
 import com.ssafy.tiggle.presentation.ui.dutchpay.CreateDutchPayScreen
-import com.ssafy.tiggle.presentation.ui.dutchpay.DutchpayRecieveScreen
-import com.ssafy.tiggle.presentation.ui.dutchpay.DutchPayStatusScreen
 import com.ssafy.tiggle.presentation.ui.dutchpay.DutchPayDetailScreen
+import com.ssafy.tiggle.presentation.ui.dutchpay.DutchPayStatusScreen
+import com.ssafy.tiggle.presentation.ui.dutchpay.DutchpayRecieveScreen
 import com.ssafy.tiggle.presentation.ui.growth.GrowthScreen
 import com.ssafy.tiggle.presentation.ui.piggybank.MainAccountDetailScreen
 import com.ssafy.tiggle.presentation.ui.piggybank.OpenAccountMode
@@ -200,7 +200,7 @@ fun NavigationGraph(
                     is Screen.MainAccountDetail -> NavEntry(key) {
                         MainAccountDetailScreen(
                             accountNo = key.accountNo,
-                            onBackClick = {navBackStack.removeLastOrNull()}
+                            onBackClick = { navBackStack.removeLastOrNull() }
                         )
                     }
 

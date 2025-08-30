@@ -134,7 +134,25 @@ private fun ShortsVideoItem(
     LaunchedEffect(isCurrentItem) {
         if (isCurrentItem) {
             try {
-                exoPlayer.setMediaItem(MediaItem.fromUri(video.videoUrl))
+                // 로컬 비디오 파일 처리
+                val mediaItem = if (video.videoUrl.startsWith("asset://")) {
+                    // assets 폴더의 파일인 경우
+                    val assetPath = video.videoUrl.removePrefix("asset://")
+                    try {
+                        // 파일 존재 여부 확인
+                        context.assets.open(assetPath).use { }
+                        MediaItem.fromUri("file:///android_asset/$assetPath")
+                    } catch (e: Exception) {
+                        Log.w("ShortsScreen", "로컬 비디오 파일을 찾을 수 없습니다: $assetPath, fallback URL 사용")
+                        // 로컬 파일이 없으면 fallback URL 사용
+                        MediaItem.fromUri("https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4")
+                    }
+                } else {
+                    // 일반 URL인 경우
+                    MediaItem.fromUri(video.videoUrl)
+                }
+                
+                exoPlayer.setMediaItem(mediaItem)
                 exoPlayer.prepare()
                 exoPlayer.playWhenReady = true
                 exoPlayer.repeatMode = Player.REPEAT_MODE_ONE

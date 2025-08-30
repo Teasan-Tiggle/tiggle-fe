@@ -1,5 +1,6 @@
 package com.ssafy.tiggle.presentation.ui.shorts
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -27,11 +28,11 @@ class ShortsViewModel @Inject constructor(
         
         viewModelScope.launch {
             try {
-                // TODO: 실제 비디오 데이터는 Repository에서 가져오기
-                val mockVideos = generateMockVideos()
+                // 로컬 비디오 파일 사용
+                val localVideos = generateLocalVideos()
                 _uiState.update { 
                     it.copy(
-                        videos = mockVideos,
+                        videos = localVideos,
                         isLoading = false
                     )
                 }
@@ -62,8 +63,8 @@ class ShortsViewModel @Inject constructor(
         
         viewModelScope.launch {
             try {
-                // TODO: 더 많은 비디오 로드 로직
-                val moreVideos = generateMockVideos(startIndex = _uiState.value.videos.size)
+                // 더 많은 로컬 비디오 로드
+                val moreVideos = generateLocalVideos(startIndex = _uiState.value.videos.size)
                 _uiState.update { currentState ->
                     currentState.copy(
                         videos = currentState.videos + moreVideos,
@@ -102,13 +103,19 @@ class ShortsViewModel @Inject constructor(
         _uiState.update { it.copy(errorMessage = null) }
     }
 
-    // Mock 데이터 생성 (나중에 제거)
-    private fun generateMockVideos(startIndex: Int = 0): List<ShortsVideo> {
-        val mockVideos = mutableListOf<ShortsVideo>()
+    // 로컬 비디오 파일 사용
+    private fun generateLocalVideos(startIndex: Int = 0): List<ShortsVideo> {
+        val localVideos = mutableListOf<ShortsVideo>()
         
-        // 테스트용 샘플 비디오 URL들 - 안정적인 Google 스토리지 사용
-        // 실제 프로젝트에서는 로컬 파일이나 자체 서버 URL 사용 권장
-        val sampleVideoUrls = listOf(
+        // 로컬 비디오 파일 경로들 (assets 폴더 기준)
+        val localVideoFiles = listOf(
+            "videos/video1.mp4",
+            "videos/video2.mp4", 
+            "videos/video3.mp4",
+        )
+        
+        // 만약 로컬 파일이 없다면 기본 샘플 비디오 사용
+        val fallbackVideoUrls = listOf(
             "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
             "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
             "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
@@ -117,21 +124,28 @@ class ShortsViewModel @Inject constructor(
         )
         
         for (i in startIndex until startIndex + 10) {
-            mockVideos.add(
+            // 로컬 파일 우선 사용, 없으면 fallback URL 사용
+            val videoUrl = if (i < localVideoFiles.size) {
+                "asset://${localVideoFiles[i % localVideoFiles.size]}"
+            } else {
+                fallbackVideoUrls[i % fallbackVideoUrls.size]
+            }
+            
+            localVideos.add(
                 ShortsVideo(
-                    id = "video_$i",
-                    videoUrl = sampleVideoUrls[i % sampleVideoUrls.size],
-                    title = "재미있는 숏폼 영상 #$i\n금융 꿀팁과 일상 브이로그",
+                    id = "local_video_$i",
+                    videoUrl = videoUrl,
+                    title = "로컬 숏폼 영상 #$i\n기부와 관련된 영상입니다",
                     username = "티끌유저${i + 1}",
                     likeCount = (100..10000).random(),
                     shareCount = (10..1000).random(),
                     viewCount = (1000..100000).random(),
-                    hashtags = listOf("금융", "절약", "투자", "일상", "브이로그", "꿀팁").shuffled().take(3),
+                    hashtags = listOf("기부", "나눔", "봉사", "일상", "브이로그", "꿀팁").shuffled().take(3),
                     isLiked = false
                 )
             )
         }
         
-        return mockVideos
+        return localVideos
     }
 }
