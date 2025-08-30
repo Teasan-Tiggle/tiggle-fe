@@ -15,8 +15,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
@@ -26,6 +30,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -44,6 +51,12 @@ import com.ssafy.tiggle.presentation.ui.components.TiggleButton
 import com.ssafy.tiggle.presentation.ui.theme.TiggleBlue
 import com.ssafy.tiggle.presentation.ui.theme.TiggleGrayLight
 import com.ssafy.tiggle.presentation.ui.theme.TiggleGrayText
+import kotlinx.coroutines.delay
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.LottieConstants
+import com.airbnb.lottie.compose.animateLottieCompositionAsState
+import com.airbnb.lottie.compose.rememberLottieComposition
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -54,12 +67,15 @@ fun DonationModal(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val sheetState = rememberModalBottomSheetState()
+    
+    // 로딩과 성공 다이얼로그 상태
+    var showLoadingDialog by remember { mutableStateOf(false) }
+    var showSuccessDialog by remember { mutableStateOf(false) }
 
     // 성공 시 모달 닫기
     LaunchedEffect(uiState.isSuccess) {
         if (uiState.isSuccess) {
-            onSuccess()
-            onDismiss()
+            showSuccessDialog = true
         }
     }
 
@@ -183,7 +199,7 @@ fun DonationModal(
 
             // 확인 버튼
             TiggleButton(
-                onClick = { viewModel.createDonation() },
+                onClick = { showLoadingDialog = true },
                 text = if (uiState.isLoading) "처리 중..." else "확인",
                 modifier = Modifier
                     .fillMaxWidth()
@@ -193,6 +209,28 @@ fun DonationModal(
 
             Spacer(modifier = Modifier.height(32.dp))
         }
+    }
+    
+    // 로딩 다이얼로그
+    if (showLoadingDialog) {
+        DonationLoadingDialog(
+            onComplete = {
+                showLoadingDialog = false
+                viewModel.createDonation()
+            }
+        )
+    }
+    
+    // 기부 성공 다이얼로그
+    if (showSuccessDialog) {
+        DonationSuccessDialog(
+            onDismiss = { 
+                showSuccessDialog = false
+                viewModel.resetState() // 상태 초기화
+                onSuccess()
+                onDismiss()
+            }
+        )
     }
 }
 
@@ -264,4 +302,111 @@ private fun getCategoryDisplayName(category: DonationCategory): String {
         DonationCategory.PEOPLE -> "People"
         DonationCategory.PROSPERITY -> "Prosperity"
     }
+}
+
+@Composable
+private fun DonationLoadingDialog(
+    onComplete: () -> Unit
+) {
+    LaunchedEffect(Unit) {
+        delay(1000) // 1초 대기
+        onComplete()
+    }
+    
+    AlertDialog(
+        onDismissRequest = { }, // 로딩 중에는 닫을 수 없음
+        properties = androidx.compose.ui.window.DialogProperties(
+            dismissOnBackPress = false,
+            dismissOnClickOutside = false
+        ),
+        title = {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                CircularProgressIndicator(
+                    color = TiggleBlue,
+                    modifier = Modifier.size(48.dp)
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                Text(
+                    text = "기부 처리 중...",
+                    style = androidx.compose.material3.MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                    color = Color.Black,
+                    textAlign = TextAlign.Center
+                )
+            }
+        },
+        text = {
+            Text(
+                text = "잠시만 기다려주세요.",
+                style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
+                color = Color(0xFF666666),
+                textAlign = TextAlign.Center
+            )
+        },
+        confirmButton = { } // 로딩 중에는 버튼 없음
+    )
+}
+
+@Composable
+private fun DonationSuccessDialog(
+    onDismiss: () -> Unit
+) {
+    val composition by rememberLottieComposition(
+        LottieCompositionSpec.RawRes(com.ssafy.tiggle.R.raw.firework)
+    )
+    val progress by animateLottieCompositionAsState(
+        composition = composition,
+        iterations = LottieConstants.IterateForever
+    )
+    
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        properties = androidx.compose.ui.window.DialogProperties(
+            dismissOnBackPress = false,
+            dismissOnClickOutside = false
+        ),
+        title = {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                // Lottie 애니메이션
+                LottieAnimation(
+                    composition = composition,
+                    progress = { progress },
+                    modifier = Modifier.size(120.dp)
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                Text(
+                    text = "기부에 성공했습니다!",
+                    style = androidx.compose.material3.MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                    color = Color.Black,
+                    textAlign = TextAlign.Center
+                )
+            }
+        },
+        text = {
+            Text(
+                text = "환경 보호에 동참해주셔서 감사합니다.",
+                style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
+                color = Color(0xFF666666),
+                textAlign = TextAlign.Center
+            )
+        },
+        confirmButton = {
+            Button(
+                onClick = onDismiss,
+                colors = ButtonDefaults.buttonColors(containerColor = TiggleBlue),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text("확인", color = Color.White)
+            }
+        }
+    )
 }
