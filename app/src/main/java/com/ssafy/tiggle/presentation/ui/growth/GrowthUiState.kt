@@ -13,7 +13,9 @@ data class GrowthUiState(
     val donationHistory: List<DonationRecord> = emptyList(),
     val donationRanking: List<RankingItem> = emptyList(),
     val heart: HeartResult = HeartResult(),
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val isLevelUp: Boolean = false, // 레벨업 상태
+    val previousLevel: Int = 0 // 이전 레벨
 )
 
 /**

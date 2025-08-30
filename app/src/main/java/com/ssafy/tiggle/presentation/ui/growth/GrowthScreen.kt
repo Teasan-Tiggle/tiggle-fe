@@ -74,6 +74,12 @@ fun GrowthScreen(
     viewModel: GrowthViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    
+    // 상태 변화 감지를 위한 LaunchedEffect
+    LaunchedEffect(uiState.growth.level, uiState.growth.heart, uiState.growth.experiencePoints) {
+        // 상태가 변경될 때마다 로그 출력 (디버깅용)
+        android.util.Log.d("GrowthScreen", "🔄 UI 상태 업데이트: 레벨=${uiState.growth.level}, 하트=${uiState.growth.heart}, 경험치=${uiState.growth.experiencePoints}")
+    }
 
     TiggleScreenLayout(
         showBackButton = false,
@@ -179,10 +185,14 @@ private fun GrowthCard(
     modifier: Modifier = Modifier,
     viewModel: GrowthViewModel = hiltViewModel()
 ) {
-    // 진행률 계산
-    val progress = remember(uiState.growth) {
-        val total = uiState.growth.totalAmount.toFloat() + uiState.growth.toNextLevel
-        if (total == 0f) 0f else uiState.growth.totalAmount.toFloat() / total
+    // 진행률 계산 - experiencePoints 기반으로 개선
+    val progress = remember(
+        uiState.growth.experiencePoints,
+        uiState.growth.toNextLevel
+    ) {
+        val currentExp = uiState.growth.experiencePoints.toFloat()
+        val totalExp = currentExp + uiState.growth.toNextLevel
+        if (totalExp == 0f) 0f else currentExp / totalExp
     }
 
     Card(
@@ -209,8 +219,32 @@ private fun GrowthCard(
                     .background(Color.Transparent)
             ) {
                 // 캐릭터
-                key(uiState.growth.level) {
+                key(uiState.growth.level, uiState.growth.experiencePoints) {
                     Character3D(level = uiState.growth.level, modifier = Modifier.fillMaxSize())
+                }
+                
+                // 레벨업 애니메이션
+                if (uiState.isLevelUp) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .fillMaxSize()
+                    ) {
+                        // 레벨업 축하 텍스트
+                        Text(
+                            text = "레벨업! 🎉",
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TiggleBlue,
+                            modifier = Modifier
+                                .align(Alignment.Center)
+                                .background(
+                                    Color.White.copy(alpha = 0.9f),
+                                    RoundedCornerShape(16.dp)
+                                )
+                                .padding(horizontal = 20.dp, vertical = 12.dp)
+                        )
+                    }
                 }
 
                 // Lottie 애니메이션
@@ -258,81 +292,96 @@ private fun GrowthCard(
                 }
 
                 // 드래그 하트
-                DraggableHeartDropTrigger(
-                    iconRes = R.drawable.heart,
-                    iconSize = 50.dp,
-                    triggerRadius = 80.dp,
-                    startOffsetBottomPadding = 16.dp,
-                    enabled = uiState.growth.heart > 0, // 0개면 비활성화
-                    onDropInCenter = {
-                        playLottie = true
-                        viewModel.useHeart() // 하트 사용 API 호출
-                    }
-                )
+                key(uiState.growth.heart) {
+                    DraggableHeartDropTrigger(
+                        iconRes = R.drawable.heart,
+                        iconSize = 50.dp,
+                        triggerRadius = 80.dp,
+                        startOffsetBottomPadding = 16.dp,
+                        enabled = uiState.growth.heart > 0, // 0개면 비활성화
+                        onDropInCenter = {
+                            playLottie = true
+                            viewModel.useHeart() // 하트 사용 API 호출
+                        }
+                    )
+                }
             }
 
             // 레벨 + 하트 개수 표시
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+            key(uiState.growth.level, uiState.growth.heart) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "레벨 ${uiState.growth.level}",
+                            fontSize = 14.sp,
+                            color = TiggleGrayText,
+                            modifier = Modifier
+                                .background(
+                                    Color.White.copy(alpha = 0.7f),
+                                    RoundedCornerShape(12.dp)
+                                )
+                                .padding(horizontal = 12.dp, vertical = 4.dp)
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Text(
+                            text = "쏠",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TiggleBlue
+                        )
+                    }
                     Text(
-                        text = "레벨 ${uiState.growth.level + 1}",
+                        text = "❤️ ${uiState.growth.heart}",
                         fontSize = 14.sp,
-                        color = TiggleGrayText,
-                        modifier = Modifier
-                            .background(
-                                Color.White.copy(alpha = 0.7f),
-                                RoundedCornerShape(12.dp)
-                            )
-                            .padding(horizontal = 12.dp, vertical = 4.dp)
-                    )
-                    Spacer(Modifier.width(12.dp))
-                    Text(
-                        text = "쏠",
-                        fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
-                        color = TiggleBlue
+                        color = if (uiState.growth.heart > 0) Color.Red else TiggleGrayText
                     )
                 }
-                Text(
-                    text = "❤️ ${uiState.growth.heart}",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = if (uiState.growth.heart > 0) Color.Red else TiggleGrayText
-                )
             }
 
             Spacer(Modifier.height(16.dp))
 
-            Text(
-                text = "총 티끌: ${Formatter.formatCurrency(uiState.growth.totalAmount)}",
-                fontSize = 16.sp,
-                color = Color.Black,
-                fontWeight = FontWeight.Medium
-            )
+            key(uiState.growth.experiencePoints, uiState.growth.toNextLevel) {
+                Text(
+                    text = "총 티끌: ${Formatter.formatCurrency(uiState.growth.totalAmount)}",
+                    fontSize = 16.sp,
+                    color = Color.Black,
+                    fontWeight = FontWeight.Medium
+                )
+                
+                Spacer(Modifier.height(4.dp))
+                
+                Text(
+                    text = "경험치: ${uiState.growth.experiencePoints}",
+                    fontSize = 14.sp,
+                    color = TiggleGrayText,
+                    fontWeight = FontWeight.Medium
+                )
 
-            Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(12.dp))
 
-            LinearProgressIndicator(
-                progress = { progress }, // 실제 진행률 적용
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(8.dp)
-                    .clip(RoundedCornerShape(4.dp)),
-                color = TiggleBlue,
-                trackColor = Color.White.copy(alpha = 0.3f)
-            )
+                LinearProgressIndicator(
+                    progress = { progress }, // 실제 진행률 적용
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(8.dp)
+                        .clip(RoundedCornerShape(4.dp)),
+                    color = TiggleBlue,
+                    trackColor = Color.White.copy(alpha = 0.3f)
+                )
 
-            Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(8.dp))
 
-            Text(
-                text = "다음 레벨까지 ${Formatter.formatCurrency(uiState.growth.toNextLevel.toLong())}",
-                fontSize = 12.sp,
-                color = TiggleGrayText
-            )
+                Text(
+                    text = "다음 레벨까지 ${uiState.growth.toNextLevel} 경험치",
+                    fontSize = 12.sp,
+                    color = TiggleGrayText
+                )
+            }
         }
     }
 }
