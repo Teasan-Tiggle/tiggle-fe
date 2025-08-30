@@ -31,12 +31,8 @@ fun BottomNavigation(
         NavigationBarItem(
             selected = currentRoute == BottomScreen.PiggyBank,
             onClick = {
+                navBackStack.removeLastOrNull()
                 navBackStack.add(BottomScreen.PiggyBank)
-//                {
-//                    launchSingleTop = true
-//                    restoreState = true
-//                    popUpTo(navController.graph.startDestinationId) { saveState = true }
-//                }
             },
             icon = { 
                 Icon(
@@ -55,12 +51,8 @@ fun BottomNavigation(
         NavigationBarItem(
             selected = currentRoute == BottomScreen.Growth,
             onClick = {
+                navBackStack.removeLastOrNull()
                 navBackStack.add(BottomScreen.Growth)
-//                {
-//                    launchSingleTop = true
-//                    restoreState = true
-//                    popUpTo(navController.graph.startDestinationId) { saveState = true }
-//                }
             },
             icon = { 
                 Icon(
@@ -80,11 +72,6 @@ fun BottomNavigation(
             selected = currentRoute == BottomScreen.Shorts,
             onClick = {
                 navBackStack.add(BottomScreen.Shorts)
-//                {
-//                    launchSingleTop = true
-//                    restoreState = true
-//                    popUpTo(navController.graph.startDestinationId) { saveState = true }
-//                }
             },
             icon = { 
                 Icon(
