@@ -242,5 +242,5 @@ adb logcat | grep "com.ssafy.tiggle"
 
 ---
 
-**개발팀**: SSAFY Tiggle Team  
-**최종 업데이트**: 2024년 8월
+**개발팀**: SSAFY 태산산 Team  
+**최종 업데이트**: 2025년 8월
