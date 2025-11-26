@@ -1,5 +1,6 @@
 package com.ssafy.tiggle.di
 
+import com.ssafy.tiggle.BuildConfig
 import com.ssafy.tiggle.core.network.AuthInterceptor
 import com.ssafy.tiggle.core.network.LoggingCookieJar
 import com.ssafy.tiggle.core.network.PrettyHttpLoggingInterceptor
@@ -30,7 +31,7 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
-    private const val BASE_URL = "http://43.203.36.96/api/"
+    private const val BASE_URL = BuildConfig.BASE_URL
 
     @Provides
     @Singleton

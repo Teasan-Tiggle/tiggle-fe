@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -20,8 +22,18 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        val props = Properties().apply {
+            load(rootProject.file("local.properties").inputStream())
+        }
+        buildConfigField("String", "BASE_URL", "\"${props["BASE_URL"]}\"")
+
     }
 
+    buildFeatures {
+        buildConfig = true
+        compose = true
+    }
     buildTypes {
         release {
             isMinifyEnabled = false
