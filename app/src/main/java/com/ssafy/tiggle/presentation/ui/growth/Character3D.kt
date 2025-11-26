@@ -2,8 +2,6 @@ package com.ssafy.tiggle.presentation.ui.growth
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.os.Handler
-import android.os.Looper
 import android.view.Choreographer
 import android.view.MotionEvent
 import android.view.SurfaceView
@@ -17,6 +15,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -32,7 +31,11 @@ import com.google.android.filament.gltfio.ResourceLoader
 import com.google.android.filament.utils.ModelViewer
 import com.google.android.filament.utils.Utils
 import com.ssafy.tiggle.R
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.IOException
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -49,6 +52,15 @@ private var animIndex: Int = -1
 private var animDurationSec: Float = 0f
 private var animStartNanos: Long = -1L
 
+// 리소스 로더 (비동기 로딩용)
+private var resourceLoader: ResourceLoader? = null
+
+// 로딩 완료 콜백
+private var onResourcesLoaded: (() -> Unit)? = null
+
+// 로딩 완료 처리 플래그 (중복 실행 방지)
+private var loadingCompleteHandled: Boolean = false
+
 @SuppressLint("ClickableViewAccessibility")
 @Composable
 fun Character3D(
@@ -57,6 +69,7 @@ fun Character3D(
     enableOrbit: Boolean = true,
 ) {
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
     var modelViewer by remember { mutableStateOf<ModelViewer?>(null) }
     var currentLevel by remember { mutableStateOf(level) }
     var isModelLoaded by remember { mutableStateOf(false) }
@@ -84,17 +97,6 @@ fun Character3D(
     }
 
     Box(modifier = modifier) {
-        // 이미지 플레이스홀더 (모델 로딩 전/중)
-        if (!isModelLoaded) {
-            Image(
-                painter = painterResource(id = R.drawable.heart),
-                contentDescription = "캐릭터",
-                modifier = Modifier
-                    .fillMaxSize()
-                    .alpha(1f - alpha),
-                contentScale = ContentScale.Fit
-            )
-        }
 
         // 3D 모델 뷰
         if (shouldStartLoading) {
@@ -103,6 +105,27 @@ fun Character3D(
             val frameCallback = remember {
                 object : Choreographer.FrameCallback {
                     override fun doFrame(frameTimeNanos: Long) {
+                        // ── 리소스 로더가 있으면 비동기 업데이트 ──
+                        resourceLoader?.let { loader ->
+                            loader.asyncUpdateLoad()
+
+                            // 로딩 완료 체크 (진행률 1.0 = 100%)
+                            val progress = loader.asyncGetLoadProgress()
+                            if (progress >= 1.0f && onResourcesLoaded != null && !loadingCompleteHandled) {
+                                loadingCompleteHandled = true
+                                val callback = onResourcesLoaded
+                                onResourcesLoaded = null
+
+                                // 코루틴으로 깔끔하게 처리: 250ms 대기 후 메인 스레드에서 콜백 실행
+                                coroutineScope.launch {
+                                    delay(250) // Material 로딩 완료 후 추가 대기
+                                    withContext(Dispatchers.Main) {
+                                        callback?.invoke()
+                                    }
+                                }
+                            }
+                        }
+
                         // ── 애니메이션이 있으면 시간계산해서 적용 ──
                         modelViewer?.let { mv ->
                             val animator = mv.animator
@@ -153,7 +176,7 @@ fun Character3D(
                         }
 
                         // 비동기로 모델 로드
-                        loadModelAsync(ctx, viewer, level) {
+                        loadModelAsync(ctx, viewer, level, coroutineScope) {
                             isModelLoaded = true
                         }
 
@@ -171,8 +194,9 @@ fun Character3D(
                     if (currentLevel != level) {
                         currentLevel = level
                         isModelLoaded = false
+                        loadingCompleteHandled = false  // 플래그 리셋
                         modelViewer?.let { viewer ->
-                            loadModelAsync(context, viewer, level) {
+                            loadModelAsync(context, viewer, level, coroutineScope) {
                                 isModelLoaded = true
                             }
                         }
@@ -180,6 +204,11 @@ fun Character3D(
                 },
                 onRelease = {
                     choreographer.removeFrameCallback(frameCallback)
+                    // 리소스 로더 정리
+                    resourceLoader?.destroy()
+                    resourceLoader = null
+                    onResourcesLoaded = null
+                    loadingCompleteHandled = false
                     modelViewer = null
                     isModelLoaded = false
                 }
@@ -189,29 +218,36 @@ fun Character3D(
 }
 
 /**
- * 비동기 모델 로딩 (콜백으로 완료 알림)
+ * 비동기 모델 로딩 (코루틴 사용, 콜백으로 완료 알림)
  */
 private fun loadModelAsync(
     context: Context,
     modelViewer: ModelViewer,
     level: Int,
+    scope: CoroutineScope,
     onLoadComplete: () -> Unit
 ) {
-    // 백그라운드 스레드에서 모델 로딩
-    Thread {
+    scope.launch(Dispatchers.IO) {
         try {
             val assetPath = LevelModels.assetPathFor(level)
             val buffer = readAssetFile(context, assetPath)
 
             if (buffer != null) {
                 // 메인 스레드에서 Filament 작업 수행
-                Handler(Looper.getMainLooper()).post {
+                withContext(Dispatchers.Main) {
                     try {
                         modelViewer.loadModelGlb(buffer)
 
-                        // 리소스 로더 호출 (텍스처/머티리얼 GPU 업로드)
+                        // 리소스 로더 생성 및 비동기 로딩 시작
                         modelViewer.asset?.let { asset ->
-                            ResourceLoader(modelViewer.engine).loadResources(asset)
+                            // 기존 리소스 로더 정리
+                            resourceLoader?.destroy()
+
+                            // 새 리소스 로더 생성
+                            resourceLoader = ResourceLoader(modelViewer.engine).apply {
+                                // 비동기 로딩 시작
+                                asyncBeginLoad(asset)
+                            }
                         }
 
                         val asset = modelViewer.asset
@@ -229,8 +265,9 @@ private fun loadModelAsync(
                         // root 트랜스폼 저장
                         saveBaseTransform(modelViewer)
 
-                        // 로딩 완료 콜백 호출
-                        onLoadComplete()
+                        // 로딩 완료 콜백 저장 (프레임 콜백에서 호출됨)
+                        onResourcesLoaded = onLoadComplete
+                        loadingCompleteHandled = false  // 플래그 리셋
 
                     } catch (e: Exception) {
                         e.printStackTrace()
@@ -240,7 +277,7 @@ private fun loadModelAsync(
         } catch (e: Exception) {
             e.printStackTrace()
         }
-    }.start()
+    }
 }
 
 private fun setupAnimatedModel(modelViewer: ModelViewer, asset: FilamentAsset, animator: Animator) {
@@ -279,16 +316,25 @@ private fun saveBaseTransform(modelViewer: ModelViewer) {
 }
 
 private fun setupFrontLight(modelViewer: ModelViewer) {
-    // 배경은 투명/스카이박스 없음 (필요시 색만 바꾸세요)
+    // 배경은 투명/스카이박스 없음
     modelViewer.scene.skybox = null
-    modelViewer.scene.indirectLight = null   // ✅ 간접광도 제거 (정면 라이트만)
+
+    // ✅ Indirect Light 추가 (ambient lighting 제공)
+    val indirectLight = com.google.android.filament.IndirectLight.Builder()
+        .intensity(30000f)  // ambient light 밝기
+        .irradiance(1, floatArrayOf(
+            // 1 band SH (3개 float = 1 x float3)
+            0.8f, 0.8f, 0.9f  // 밝은 회백색 ambient
+        ))
+        .build(modelViewer.engine)
+    modelViewer.scene.indirectLight = indirectLight
 
     // 정면에서 살짝 내려 비추는 한 개의 방향광
     val key = EntityManager.get().create()
     LightManager.Builder(LightManager.Type.DIRECTIONAL)
         .color(1.0f, 1.0f, 1.0f)   // 순백색 라이트
-        .intensity(450_000f)       // 밝기 (필요하면 80k~200k 사이로 조절)
-        .direction(0f, -0.2f, -1f) // ✅ 화면 정면(–Z)에서 약간 아래로
+        .intensity(450_000f)       // 밝기
+        .direction(0f, -0.2f, -1f) // 화면 정면(–Z)에서 약간 아래로
         .castShadows(false)        // 그림자 비활성화
         .build(modelViewer.engine, key)
     modelViewer.scene.addEntity(key)

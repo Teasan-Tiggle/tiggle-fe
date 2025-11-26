@@ -45,7 +45,7 @@ class AuthInterceptor @Inject constructor(
         val res = chain.proceed(req)
         if (res.code != 401 && res.code != 403) return res
 
-        // 2) 401 → 재발급 (단일 실행)
+        // 401 → 재발급 (단일 실행)
         val refreshed = runBlocking {
             refreshMutex.withLock {
                 val latest = stripBearer(authDataSource.getAccessToken())
