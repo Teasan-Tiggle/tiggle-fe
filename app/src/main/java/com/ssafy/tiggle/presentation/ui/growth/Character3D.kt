@@ -9,7 +9,6 @@ import android.view.MotionEvent
 import android.view.SurfaceView
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -20,9 +19,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.viewinterop.AndroidView
 import com.google.android.filament.EntityManager
 import com.google.android.filament.LightManager
@@ -31,7 +28,6 @@ import com.google.android.filament.gltfio.FilamentAsset
 import com.google.android.filament.gltfio.ResourceLoader
 import com.google.android.filament.utils.ModelViewer
 import com.google.android.filament.utils.Utils
-import com.ssafy.tiggle.R
 import kotlinx.coroutines.delay
 import java.io.IOException
 import java.nio.ByteBuffer
@@ -39,7 +35,7 @@ import java.nio.ByteOrder
 import kotlin.math.PI
 
 /**
- * 레벨에 따라 다른 GLB를 로드하는 3D 캐릭터 컴포저블 (이미지 플레이스홀더 사용)
+ * 레벨에 따라 다른 GLB를 로드하는 3D 캐릭터 컴포저블
  */
 // 전역 변수
 private var baseTransform: FloatArray? = null
@@ -49,12 +45,21 @@ private var animIndex: Int = -1
 private var animDurationSec: Float = 0f
 private var animStartNanos: Long = -1L
 
+//텍스처 로더
+private var resourceLoader: ResourceLoader? = null
+
+//로딩 완료 콜백
+private var onResourcesLoaded: (() -> Unit)? = null
+
+//콜백 중복 실행 방지 플래그
+private var loadingCompleteHandled: Boolean = false
+
 @SuppressLint("ClickableViewAccessibility")
 @Composable
 fun Character3D(
     level: Int,
     modifier: Modifier = Modifier,
-    enableOrbit: Boolean = true,
+    enableOrbit: Boolean = true, //드래그 회전 활성화 여부
 ) {
     val context = LocalContext.current
     var modelViewer by remember { mutableStateOf<ModelViewer?>(null) }
@@ -85,24 +90,49 @@ fun Character3D(
 
     Box(modifier = modifier) {
         // 이미지 플레이스홀더 (모델 로딩 전/중)
-        if (!isModelLoaded) {
-            Image(
-                painter = painterResource(id = R.drawable.heart),
-                contentDescription = "캐릭터",
-                modifier = Modifier
-                    .fillMaxSize()
-                    .alpha(1f - alpha),
-                contentScale = ContentScale.Fit
-            )
-        }
+//        if (!isModelLoaded) {
+//            Image(
+//                painter = painterResource(id = R.drawable.heart),
+//                contentDescription = "캐릭터",
+//                modifier = Modifier
+//                    .fillMaxSize()
+//                    .alpha(1f - alpha),
+//                contentScale = ContentScale.Fit
+//            )
+//        }
 
         // 3D 모델 뷰
         if (shouldStartLoading) {
             // 렌더링 프레임 콜백
             val choreographer = remember { Choreographer.getInstance() }
+
+            // 프레임 콜백 (매 프레임마다 실행)
             val frameCallback = remember {
                 object : Choreographer.FrameCallback {
                     override fun doFrame(frameTimeNanos: Long) {
+                        // ──────────────────────────────────
+                        //  텍스처 로딩 진행 및 완료 체크
+                        // ──────────────────────────────────
+                        resourceLoader?.let { loader ->
+                            //1. 텍스처를 GPU에 조끔씩 업로드 (매 프레임마다)
+                            loader.asyncUpdateLoad()
+
+                            //2. 현재 로딩 진행률 체크
+                            val progress = loader.asyncGetLoadProgress()
+                            //3. 로딩이 100% 완료되었고, 콜백이 아직 실행 안됐을때
+                            if (progress >= 1.0f && onResourcesLoaded != null && !loadingCompleteHandled) {
+                                //4. 중복 실행 방지
+                                loadingCompleteHandled = true
+                                val callback = onResourcesLoaded
+                                //5. 콜백 초기화
+                                onResourcesLoaded = null
+
+                                // 6. 완전히 로드 후 콜백 실행
+                                Handler(Looper.getMainLooper()).postDelayed({
+                                    callback?.invoke()
+                                }, 500)
+                            }
+                        }
                         // ── 애니메이션이 있으면 시간계산해서 적용 ──
                         modelViewer?.let { mv ->
                             val animator = mv.animator
@@ -140,12 +170,10 @@ fun Character3D(
                         // ModelViewer 생성 (기본 생성자 사용)
                         val viewer = ModelViewer(surfaceView)
                         modelViewer = viewer
-
-                        // 투명 배경 설정
-                        setupTransparentBackground(viewer)
-
                         // 개선된 조명 설정
                         setupFrontLight(viewer)
+                        // 투명 배경 설정
+                        setupTransparentBackground(viewer)
 
                         // 터치 이벤트 처리 - 직접 구현
                         if (enableOrbit) {
@@ -171,6 +199,7 @@ fun Character3D(
                     if (currentLevel != level) {
                         currentLevel = level
                         isModelLoaded = false
+                        loadingCompleteHandled = false
                         modelViewer?.let { viewer ->
                             loadModelAsync(context, viewer, level) {
                                 isModelLoaded = true
@@ -180,6 +209,10 @@ fun Character3D(
                 },
                 onRelease = {
                     choreographer.removeFrameCallback(frameCallback)
+                    resourceLoader?.destroy()
+                    resourceLoader = null
+                    onResourcesLoaded = null
+                    loadingCompleteHandled = false
                     modelViewer = null
                     isModelLoaded = false
                 }
@@ -197,6 +230,8 @@ private fun loadModelAsync(
     level: Int,
     onLoadComplete: () -> Unit
 ) {
+    loadingCompleteHandled = false
+
     // 백그라운드 스레드에서 모델 로딩
     Thread {
         try {
@@ -211,7 +246,11 @@ private fun loadModelAsync(
 
                         // 리소스 로더 호출 (텍스처/머티리얼 GPU 업로드)
                         modelViewer.asset?.let { asset ->
-                            ResourceLoader(modelViewer.engine).loadResources(asset)
+                            resourceLoader = ResourceLoader(modelViewer.engine).apply {
+                                asyncBeginLoad(asset)  // 비동기 방식으로 변경
+                            }
+                            // 콜백은 저장만 하고 즉시 호출하지 않음
+                            onResourcesLoaded = onLoadComplete
                         }
 
                         val asset = modelViewer.asset
@@ -230,7 +269,7 @@ private fun loadModelAsync(
                         saveBaseTransform(modelViewer)
 
                         // 로딩 완료 콜백 호출
-                        onLoadComplete()
+//                        onLoadComplete()
 
                     } catch (e: Exception) {
                         e.printStackTrace()
@@ -279,14 +318,13 @@ private fun saveBaseTransform(modelViewer: ModelViewer) {
 }
 
 private fun setupFrontLight(modelViewer: ModelViewer) {
-    // 배경은 투명/스카이박스 없음 (필요시 색만 바꾸세요)
     modelViewer.scene.skybox = null
-    modelViewer.scene.indirectLight = null   // ✅ 간접광도 제거 (정면 라이트만)
+    modelViewer.scene.indirectLight = null
 
     // 정면에서 살짝 내려 비추는 한 개의 방향광
     val key = EntityManager.get().create()
     LightManager.Builder(LightManager.Type.DIRECTIONAL)
-        .color(1.0f, 1.0f, 1.0f)   // 순백색 라이트
+        .color(1.0f, 1.0f, 1.0f)
         .intensity(450_000f)       // 밝기 (필요하면 80k~200k 사이로 조절)
         .direction(0f, -0.2f, -1f) // ✅ 화면 정면(–Z)에서 약간 아래로
         .castShadows(false)        // 그림자 비활성화
@@ -339,6 +377,7 @@ private fun readAssetFile(context: Context, path: String): ByteBuffer? {
     }
 }
 
+// ============== 드래그 회전 관련 ==============
 private var lastTouchX = 0f
 private var accumulatedRotation = 0f // 누적 회전 각도
 
