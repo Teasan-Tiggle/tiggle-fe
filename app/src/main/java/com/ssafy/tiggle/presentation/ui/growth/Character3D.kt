@@ -16,11 +16,18 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.LottieConstants
+import com.airbnb.lottie.compose.animateLottieCompositionAsState
+import com.airbnb.lottie.compose.rememberLottieComposition
 import com.google.android.filament.EntityManager
 import com.google.android.filament.LightManager
 import com.google.android.filament.gltfio.Animator
@@ -28,6 +35,7 @@ import com.google.android.filament.gltfio.FilamentAsset
 import com.google.android.filament.gltfio.ResourceLoader
 import com.google.android.filament.utils.ModelViewer
 import com.google.android.filament.utils.Utils
+import com.ssafy.tiggle.R
 import kotlinx.coroutines.delay
 import java.io.IOException
 import java.nio.ByteBuffer
@@ -60,10 +68,11 @@ fun Character3D(
     level: Int,
     modifier: Modifier = Modifier,
     enableOrbit: Boolean = true, //드래그 회전 활성화 여부
+    showLoadingLottie: Boolean = true
 ) {
     val context = LocalContext.current
     var modelViewer by remember { mutableStateOf<ModelViewer?>(null) }
-    var currentLevel by remember { mutableStateOf(level) }
+    var currentLevel by rememberSaveable { mutableStateOf(level) }
     var isModelLoaded by remember { mutableStateOf(false) }
     var shouldStartLoading by remember { mutableStateOf(false) }
 
@@ -72,6 +81,23 @@ fun Character3D(
         targetValue = if (isModelLoaded) 1f else 0f,
         animationSpec = tween(durationMillis = 300),
         label = "model_fade"
+    )
+
+    // 로티 애니메이션 (로딩 중에만 표시)
+    val lottieAlpha by animateFloatAsState(
+        targetValue = if (!isModelLoaded && showLoadingLottie) 1f else 0f,
+        animationSpec = tween(durationMillis = 300),
+        label = "lottie_fade"
+    )
+
+    // 로티 애니메이션 컴포지션
+    val composition by rememberLottieComposition(
+        LottieCompositionSpec.RawRes(R.raw.character_loading) // ← 여기에 로티 파일 이름
+    )
+    val lottieProgress by animateLottieCompositionAsState(
+        composition = composition,
+        iterations = LottieConstants.IterateForever, // 무한 반복
+        isPlaying = !isModelLoaded && showLoadingLottie
     )
 
     // 컴포지션 완료 후 로딩 시작
@@ -89,17 +115,17 @@ fun Character3D(
     }
 
     Box(modifier = modifier) {
-        // 이미지 플레이스홀더 (모델 로딩 전/중)
-//        if (!isModelLoaded) {
-//            Image(
-//                painter = painterResource(id = R.drawable.heart),
-//                contentDescription = "캐릭터",
-//                modifier = Modifier
-//                    .fillMaxSize()
-//                    .alpha(1f - alpha),
-//                contentScale = ContentScale.Fit
-//            )
-//        }
+        if (showLoadingLottie) {
+            LottieAnimation(
+                composition = composition,
+                progress = { lottieProgress },
+                modifier = Modifier
+                    .fillMaxSize()
+                    .alpha(lottieAlpha),
+                contentScale = ContentScale.Fit
+            )
+        }
+
 
         // 3D 모델 뷰
         if (shouldStartLoading) {
@@ -130,7 +156,7 @@ fun Character3D(
                                 // 6. 완전히 로드 후 콜백 실행
                                 Handler(Looper.getMainLooper()).postDelayed({
                                     callback?.invoke()
-                                }, 500)
+                                }, 1000)
                             }
                         }
                         // ── 애니메이션이 있으면 시간계산해서 적용 ──

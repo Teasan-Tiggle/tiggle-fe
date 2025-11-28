@@ -62,6 +62,7 @@ import com.ssafy.tiggle.presentation.ui.theme.AppTypography
 import com.ssafy.tiggle.presentation.ui.theme.TiggleBlue
 import com.ssafy.tiggle.presentation.ui.theme.TiggleGrayText
 import com.ssafy.tiggle.presentation.ui.theme.TiggleSkyBlue
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
@@ -74,11 +75,14 @@ fun GrowthScreen(
     viewModel: GrowthViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    
+
     // 상태 변화 감지를 위한 LaunchedEffect
     LaunchedEffect(uiState.growth.level, uiState.growth.heart, uiState.growth.experiencePoints) {
         // 상태가 변경될 때마다 로그 출력 (디버깅용)
-        android.util.Log.d("GrowthScreen", "🔄 UI 상태 업데이트: 레벨=${uiState.growth.level}, 하트=${uiState.growth.heart}, 경험치=${uiState.growth.experiencePoints}")
+        android.util.Log.d(
+            "GrowthScreen",
+            "🔄 UI 상태 업데이트: 레벨=${uiState.growth.level}, 하트=${uiState.growth.heart}, 경험치=${uiState.growth.experiencePoints}"
+        )
     }
 
     TiggleScreenLayout(
@@ -185,6 +189,17 @@ private fun GrowthCard(
     modifier: Modifier = Modifier,
     viewModel: GrowthViewModel = hiltViewModel()
 ) {
+    var playLottie2 by remember { mutableStateOf(false) }
+    var isHeartAnimationPlaying by remember { mutableStateOf(false) }
+    var displayLevel by remember { mutableStateOf(uiState.growth.level) }
+
+    // 레벨업 감지 및 지연 적용
+    LaunchedEffect(uiState.growth.level, isHeartAnimationPlaying) {
+        if (uiState.growth.level != displayLevel && !isHeartAnimationPlaying) {
+            // 하트 애니메이션이 끝났고 레벨이 바뀌었으면 업데이트
+            displayLevel = uiState.growth.level
+        }
+    }
     // 진행률 계산 - experiencePoints 기반으로 개선
     val progress = remember(
         uiState.growth.experiencePoints,
@@ -219,10 +234,14 @@ private fun GrowthCard(
                     .background(Color.Transparent)
             ) {
                 // 캐릭터
-                key(uiState.growth.level, uiState.growth.experiencePoints) {
-                    Character3D(level = uiState.growth.level, modifier = Modifier.fillMaxSize())
+                key(displayLevel) {
+                    Character3D(
+                        level = displayLevel,
+                        modifier = Modifier.fillMaxSize(),
+                        showLoadingLottie = !playLottie2
+                    )
                 }
-                
+
                 // 레벨업 애니메이션
                 if (uiState.isLevelUp) {
                     Box(
@@ -260,6 +279,7 @@ private fun GrowthCard(
 
                 LaunchedEffect(playLottie, composition) {
                     if (playLottie && composition != null) {
+                        isHeartAnimationPlaying = true
                         lottieProgress.snapTo(0f)
                         val t1 = (LOTTIE_DURATION_MS * SLOW_PORTION).toInt()
                         lottieProgress.animateTo(
@@ -275,6 +295,8 @@ private fun GrowthCard(
                             )
                         )
                         playLottie = false
+                        delay(100)
+                        isHeartAnimationPlaying = false
                     }
                 }
 
@@ -292,19 +314,18 @@ private fun GrowthCard(
                 }
 
                 // 드래그 하트
-                key(uiState.growth.heart) {
-                    DraggableHeartDropTrigger(
-                        iconRes = R.drawable.heart,
-                        iconSize = 50.dp,
-                        triggerRadius = 80.dp,
-                        startOffsetBottomPadding = 16.dp,
-                        enabled = uiState.growth.heart > 0, // 0개면 비활성화
-                        onDropInCenter = {
-                            playLottie = true
-                            viewModel.useHeart() // 하트 사용 API 호출
-                        }
-                    )
-                }
+                DraggableHeartDropTrigger(
+                    iconRes = R.drawable.heart,
+                    iconSize = 50.dp,
+                    triggerRadius = 80.dp,
+                    startOffsetBottomPadding = 16.dp,
+                    enabled = uiState.growth.heart > 0, // 0개면 비활성화
+                    onDropInCenter = {
+                        playLottie = true
+                        viewModel.useHeart() // 하트 사용 API 호출
+                    }
+                )
+
             }
 
             // 레벨 + 하트 개수 표시
@@ -352,9 +373,9 @@ private fun GrowthCard(
                     color = Color.Black,
                     fontWeight = FontWeight.Medium
                 )
-                
+
                 Spacer(Modifier.height(4.dp))
-                
+
                 Text(
                     text = "경험치: ${uiState.growth.experiencePoints}",
                     fontSize = 14.sp,
