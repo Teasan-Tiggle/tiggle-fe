@@ -77,7 +77,9 @@ fun PiggyBankDetailsScreen(
                 Image(
                     painter = painterResource(id = R.drawable.linked_card_option),
                     contentDescription = "저금통 정보 수정",
-                    modifier = Modifier.size(25.dp).clickable { onMore() }
+                    modifier = Modifier
+                        .size(25.dp)
+                        .clickable { onMore() }
                 )
             }
         }
@@ -108,26 +110,29 @@ fun PiggyBankDetailsScreen(
                     SectionTitle(text = "주간 자투리 적립")
                     Spacer(Modifier.height(10.dp))
 
-                    Column () {
-                        // 카드 높이만큼 하단 여백(패딩) 확보: 100~120dp 권장
-                        LazyColumn(
-                            modifier = Modifier
-                                .weight(2f),
-                            verticalArrangement = Arrangement.spacedBy(10.dp),
-                            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 0.dp)
-                        ) {
-                            items(uiState.changeList, key = { it.id }) { item ->
-                                EntryItemCard(item = item, onClick = { onItemClick(item) })
+                    Box(modifier = Modifier.weight(1f)) {
+                        Column(modifier = Modifier.fillMaxSize()) {
+                            LazyColumn(
+                                modifier = Modifier.weight(1f),
+                                verticalArrangement = Arrangement.spacedBy(10.dp),
+                                contentPadding = PaddingValues(
+                                    start = 20.dp,
+                                    end = 20.dp,
+                                    top = 0.dp,
+                                    bottom = 10.dp
+                                )
+                            ) {
+                                items(uiState.changeList, key = { it.id }) { item ->
+                                    EntryItemCard(item = item, onClick = { onItemClick(item) })
+                                }
                             }
-                        }
 
-                        InfoTipCard(
-                            title = "자투리 적립 방식",
-                            message = "매주 월요일에 내 계좌 잔액의 천원 미만 자투리 금액이 자동으로 저금통에 적립됩니다.",
-                            modifier = Modifier
-                                .weight(1f)
-                                .padding(horizontal = 20.dp, vertical = 30.dp)
-                        )
+                            InfoTipCard(
+                                title = "자투리 적립 방식",
+                                message = "매주 월요일에 내 계좌 잔액의 천원 미만 자투리 금액이 자동으로 저금통에 적립됩니다.",
+                                modifier = Modifier.padding(horizontal = 20.dp, vertical = 20.dp)
+                            )
+                        }
                     }
                 }
 
@@ -135,25 +140,29 @@ fun PiggyBankDetailsScreen(
                     SectionTitle(text = "더치페이 잔돈 적립")
                     Spacer(Modifier.height(10.dp))
 
-                    Column () {
-                        LazyColumn(
-                            modifier = Modifier
-                                .weight(2f),
-                            verticalArrangement = Arrangement.spacedBy(10.dp),
-                            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 0.dp)
-                        ) {
-                            items(uiState.dutchpayList, key = { it.id }) { item ->
-                                EntryItemCard(item = item, onClick = { onItemClick(item) })
+                    Box(modifier = Modifier.weight(1f)) {
+                        Column(modifier = Modifier.fillMaxSize()) {
+                            LazyColumn(
+                                modifier = Modifier.weight(1f),
+                                verticalArrangement = Arrangement.spacedBy(10.dp),
+                                contentPadding = PaddingValues(
+                                    start = 20.dp,
+                                    end = 20.dp,
+                                    top = 0.dp,
+                                    bottom = 10.dp
+                                )
+                            ) {
+                                items(uiState.dutchpayList, key = { it.id }) { item ->
+                                    EntryItemCard(item = item, onClick = { onItemClick(item) })
+                                }
                             }
-                        }
 
-                        InfoTipCard(
-                            title = "더치페이 적립 방식",
-                            message = "더치페이할 때 ‘내가 더 낼게요’를 선택하면 자투리 금액이 저금통에 적립됩니다.",
-                            modifier = Modifier
-                                .weight(1f)
-                                .padding(horizontal = 20.dp, vertical = 30.dp)
-                        )
+                            InfoTipCard(
+                                title = "더치페이 적립 방식",
+                                message = "더치페이할 때 '내가 더 낼게요'를 선택하면 자투리 금액이 저금통에 적립됩니다.",
+                                modifier = Modifier.padding(horizontal = 20.dp, vertical = 20.dp)
+                            )
+                        }
                     }
                 }
             }
